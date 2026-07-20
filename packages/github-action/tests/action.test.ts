@@ -37,8 +37,16 @@ function inputs(
   );
 }
 
-function source(): GitHubDataSource {
+function source(
+  repositoryResult: unknown = { visibility: 'public' },
+): GitHubDataSource {
   return {
+    async getRepository() {
+      if (repositoryResult instanceof Error) {
+        throw repositoryResult;
+      }
+      return repositoryResult;
+    },
     async getWorkflowRun() {
       return {
         id: 100,
@@ -48,7 +56,6 @@ function source(): GitHubDataSource {
         head_sha: 'abcdef',
         head_branch: 'feature',
         event: 'push',
-        repository: { visibility: 'private' },
         pull_requests: [],
       };
     },
@@ -189,5 +196,35 @@ describe('executeAction', () => {
         },
       ),
     ).rejects.toThrow('could not be identified');
+  });
+
+  it('continues the Action when repository metadata is unavailable', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'greenci-action-test-'));
+    temporaryDirectories.push(directory);
+    const values = inputs({ 'upload-report-artifact': 'false' });
+    const warningMessages: string[] = [];
+    const io: ActionIO = {
+      getInput: (name) => values.get(name) ?? '',
+      info: () => undefined,
+      warning: (message) => warningMessages.push(message),
+      setOutput: () => undefined,
+      async writeSummary() {},
+      async uploadArtifact() {},
+    };
+    const report = await executeAction(
+      io,
+      { ...environment, RUNNER_TEMP: directory },
+      {
+        createSource: () => source(new Error('repository API failed')),
+        now: () => new Date('2026-07-20T00:02:00.000Z'),
+        workingDirectory: directory,
+      },
+    );
+    expect(report.identity.repositoryVisibility).toBe('unknown');
+    expect(report.current.runnerSeconds).toBe(60);
+    expect(report.warnings[0]?.code).toBe('REPOSITORY_METADATA_UNAVAILABLE');
+    expect(warningMessages[0]).toContain(
+      'code=REPOSITORY_METADATA_UNAVAILABLE',
+    );
   });
 });

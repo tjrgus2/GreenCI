@@ -17,31 +17,43 @@ export function analyzeWorkflow(input: unknown): AnalysisReport {
     validated.currentJobName,
   );
   const runtime = analyzeRuntime(exclusion.jobs);
-  const warnings: string[] = [];
+  const warnings = [...validated.warnings];
 
   if (exclusion.heuristic) {
-    warnings.push(
-      'The current analyzer job was excluded heuristically because its API name did not match GITHUB_JOB.',
-    );
+    warnings.push({
+      code: 'ANALYZER_EXCLUSION_HEURISTIC',
+      source: 'core',
+      message:
+        'The current analyzer job was excluded heuristically because its API name did not match GITHUB_JOB.',
+    });
   }
   if (exclusion.excludedJobIds.length === 0) {
-    warnings.push(
-      'The current analyzer job could not be identified; incomplete jobs do not contribute duration metrics.',
-    );
+    warnings.push({
+      code: 'ANALYZER_NOT_IDENTIFIED',
+      source: 'core',
+      message:
+        'The current analyzer job could not be identified; incomplete jobs do not contribute duration metrics.',
+    });
   }
   if (exclusion.jobs.some((job) => job.durationSeconds === undefined)) {
-    warnings.push(
-      'One or more jobs had incomplete timestamps and were excluded from runner-time totals.',
-    );
+    warnings.push({
+      code: 'JOB_TIMESTAMPS_INCOMPLETE',
+      source: 'core',
+      message:
+        'One or more jobs had incomplete timestamps and were excluded from runner-time totals.',
+    });
   }
   if (
     exclusion.jobs.some((job) =>
       job.steps.some((step) => step.durationSeconds === undefined),
     )
   ) {
-    warnings.push(
-      'One or more steps had incomplete timestamps and show an unavailable duration.',
-    );
+    warnings.push({
+      code: 'STEP_TIMESTAMPS_INCOMPLETE',
+      source: 'core',
+      message:
+        'One or more steps had incomplete timestamps and show an unavailable duration.',
+    });
   }
 
   return AnalysisReportSchema.parse({

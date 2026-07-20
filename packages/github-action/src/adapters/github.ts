@@ -4,6 +4,7 @@ import {
   ConclusionSchema,
   NormalizedJobSchema,
   WorkflowRunIdentitySchema,
+  type AnalysisWarning,
   type Conclusion,
   type NormalizedJob,
   type NormalizedStep,
@@ -26,12 +27,14 @@ const WorkflowRunSchema = z
     head_sha: z.string().min(1),
     head_branch: z.string().nullable(),
     event: z.string().min(1),
-    repository: z
-      .object({
-        visibility: z.enum(['public', 'private', 'internal']),
-      })
-      .passthrough(),
     pull_requests: z.array(PullRequestSchema).default([]),
+  })
+  .passthrough();
+
+const RepositoryMetadataSchema = z
+  .object({
+    visibility: z.unknown().optional(),
+    private: z.boolean().optional(),
   })
   .passthrough();
 
@@ -62,6 +65,10 @@ const JobsSchema = z.array(JobSchema);
 
 /** Minimal injected GitHub API boundary for current-run collection. */
 export interface GitHubDataSource {
+  getRepository(parameters: {
+    owner: string;
+    repository: string;
+  }): Promise<unknown>;
   getWorkflowRun(parameters: {
     owner: string;
     repository: string;
@@ -81,6 +88,45 @@ export interface CurrentRunReference {
   readonly repository: string;
   readonly runId: number;
   readonly runAttempt: number;
+}
+
+/** Canonical repository visibility plus non-fatal collection warnings. */
+export interface RepositoryMetadataResult {
+  readonly visibility: WorkflowRunIdentity['repositoryVisibility'];
+  readonly warnings: AnalysisWarning[];
+}
+
+const visibilityWarning: AnalysisWarning = {
+  code: 'REPOSITORY_VISIBILITY_UNKNOWN',
+  source: 'github-api',
+  message:
+    'GitHub repository metadata did not contain a recognized visibility value; visibility is unknown.',
+};
+
+const metadataUnavailableWarning: AnalysisWarning = {
+  code: 'REPOSITORY_METADATA_UNAVAILABLE',
+  source: 'github-api',
+  message:
+    'GitHub repository metadata could not be retrieved; visibility is unknown.',
+};
+
+/** Normalize only canonical REST visibility; never infer it from `private`. */
+export function normalizeRepositoryMetadata(
+  rawRepository: unknown,
+): RepositoryMetadataResult {
+  const parsed = RepositoryMetadataSchema.safeParse(rawRepository);
+  if (!parsed.success || typeof parsed.data.visibility !== 'string') {
+    return { visibility: 'unknown', warnings: [visibilityWarning] };
+  }
+  const visibility = parsed.data.visibility.trim().toLocaleLowerCase('en-US');
+  if (
+    visibility === 'public' ||
+    visibility === 'private' ||
+    visibility === 'internal'
+  ) {
+    return { visibility, warnings: [] };
+  }
+  return { visibility: 'unknown', warnings: [visibilityWarning] };
 }
 
 function normalizeConclusion(value: string | null): Conclusion {
@@ -150,6 +196,7 @@ export function normalizeCurrentRun(
   rawRun: unknown,
   rawJobs: unknown,
   reference: CurrentRunReference,
+  repositoryVisibility: WorkflowRunIdentity['repositoryVisibility'],
 ): { identity: WorkflowRunIdentity; jobs: NormalizedJob[] } {
   const run = WorkflowRunSchema.parse(rawRun);
   const jobs = JobsSchema.parse(rawJobs);
@@ -171,7 +218,7 @@ export function normalizeCurrentRun(
           pullRequestNumber: pullRequest.number,
         }),
     event: run.event,
-    repositoryVisibility: run.repository.visibility,
+    repositoryVisibility,
   });
   return {
     identity,
@@ -183,18 +230,40 @@ export function normalizeCurrentRun(
 export async function collectCurrentRun(
   source: GitHubDataSource,
   reference: CurrentRunReference,
-): Promise<{ identity: WorkflowRunIdentity; jobs: NormalizedJob[] }> {
-  const [run, jobs] = await Promise.all([
+): Promise<{
+  identity: WorkflowRunIdentity;
+  jobs: NormalizedJob[];
+  warnings: AnalysisWarning[];
+}> {
+  const repositoryMetadata = source
+    .getRepository(reference)
+    .then(normalizeRepositoryMetadata)
+    .catch((): RepositoryMetadataResult => ({
+      visibility: 'unknown',
+      warnings: [metadataUnavailableWarning],
+    }));
+  const [run, jobs, repository] = await Promise.all([
     source.getWorkflowRun(reference),
     source.listJobsForRunAttempt(reference),
+    repositoryMetadata,
   ]);
-  return normalizeCurrentRun(run, jobs, reference);
+  return {
+    ...normalizeCurrentRun(run, jobs, reference, repository.visibility),
+    warnings: repository.warnings,
+  };
 }
 
 /** Create the production Octokit-backed data source. */
 export function createGitHubDataSource(token: string): GitHubDataSource {
   const octokit = getOctokit(token);
   return {
+    async getRepository(parameters) {
+      const response = await octokit.rest.repos.get({
+        owner: parameters.owner,
+        repo: parameters.repository,
+      });
+      return response.data;
+    },
     async getWorkflowRun(parameters) {
       const response = await octokit.rest.actions.getWorkflowRun({
         owner: parameters.owner,

@@ -1,5 +1,6 @@
 export {
   AnalysisReportSchema,
+  AnalysisWarningSchema,
   AnalyzeWorkflowInputSchema,
   ConclusionSchema,
   NormalizedJobSchema,
@@ -8,6 +9,7 @@ export {
 } from './domain/schemas.js';
 export type {
   AnalysisReport,
+  AnalysisWarning,
   AnalyzeWorkflowInput,
   Conclusion,
   NormalizedJob,

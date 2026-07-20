@@ -5,6 +5,7 @@ import {
   analyzeWorkflow,
   renderJobSummary,
   type AnalysisReport,
+  type AnalysisWarning,
 } from '@greenci/core';
 import { collectCurrentRun, type GitHubDataSource } from './adapters/github.js';
 import { parseActionInputs } from './config/inputs.js';
@@ -75,7 +76,7 @@ async function writeReport(
 
 function appendWarning(
   report: AnalysisReport,
-  warning: string,
+  warning: AnalysisWarning,
 ): AnalysisReport {
   return AnalysisReportSchema.parse({
     ...report,
@@ -94,6 +95,11 @@ export async function executeAction(
   io.info('[GreenCI] INFO  collection.current_jobs started');
   const source = dependencies.createSource(inputs.githubToken);
   const collected = await collectCurrentRun(source, reference);
+  for (const warning of collected.warnings) {
+    io.warning(
+      `[GreenCI] WARN  repository.metadata degraded code=${warning.code}`,
+    );
+  }
   io.info(
     `[GreenCI] INFO  collection.current_jobs completed jobs=${collected.jobs.length}`,
   );
@@ -105,19 +111,24 @@ export async function executeAction(
       ? {}
       : { currentJobName: environment.GITHUB_JOB }),
     generatedAt: dependencies.now().toISOString(),
+    warnings: collected.warnings,
   });
 
   if (inputs.locale !== 'en') {
-    report = appendWarning(
-      report,
-      'Korean rendering is scheduled after the Week 1 exit gate; this report uses English.',
-    );
+    report = appendWarning(report, {
+      code: 'LOCALE_FALLBACK',
+      source: 'action',
+      message:
+        'Korean rendering is scheduled after the Week 1 exit gate; this report uses English.',
+    });
   }
   if (inputs.parseFailureLogs) {
-    report = appendWarning(
-      report,
-      'Failure-log parsing is disabled in the Week 1 current-run implementation.',
-    );
+    report = appendWarning(report, {
+      code: 'FAILURE_LOG_PARSING_DISABLED',
+      source: 'action',
+      message:
+        'Failure-log parsing is disabled in the Week 1 current-run implementation.',
+    });
   }
 
   const reportPath = resolve(
@@ -130,8 +141,12 @@ export async function executeAction(
     await io.writeSummary(renderJobSummary(report));
     io.info('[GreenCI] INFO  report.summary written');
   } catch {
-    const warning =
-      'Job Summary publication failed; the JSON report remains available.';
+    const warning: AnalysisWarning = {
+      code: 'SUMMARY_PUBLISH_FAILED',
+      source: 'action',
+      message:
+        'Job Summary publication failed; the JSON report remains available.',
+    };
     io.warning(`[GreenCI] WARN  report.summary failed`);
     report = appendWarning(report, warning);
     await writeReport(reportPath, report);
@@ -146,8 +161,12 @@ export async function executeAction(
       );
       io.info('[GreenCI] INFO  report.artifact uploaded');
     } catch {
-      const warning =
-        'Report artifact upload failed; the local JSON report remains available.';
+      const warning: AnalysisWarning = {
+        code: 'ARTIFACT_UPLOAD_FAILED',
+        source: 'action',
+        message:
+          'Report artifact upload failed; the local JSON report remains available.',
+      };
       io.warning('[GreenCI] WARN  report.artifact failed');
       report = appendWarning(report, warning);
       await writeReport(reportPath, report);

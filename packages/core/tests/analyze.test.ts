@@ -39,6 +39,7 @@ const input: AnalyzeWorkflowInput = {
   jobs: [job(1, 'build'), job(2, 'GreenCI', false)],
   currentJobName: 'greenci',
   generatedAt: '2026-07-20T00:02:00.000Z',
+  warnings: [],
 };
 
 describe('excludeAnalyzerJob', () => {

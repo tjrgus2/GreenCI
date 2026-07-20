@@ -40,7 +40,8 @@ export function renderJobSummary(report: AnalysisReport): string {
   );
   const stepRows = report.jobs.flatMap(renderStepRows);
   const warningLines = report.warnings.map(
-    (warning) => `- ${escapeMarkdown(warning)}`,
+    (warning) =>
+      `- \`${warning.code}\` ${escapeMarkdown(warning.message)} (${warning.source})`,
   );
 
   return [

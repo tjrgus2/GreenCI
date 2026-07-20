@@ -33,4 +33,18 @@ describe('fixture replay', () => {
       '"schemaVersion": "1.0.0"',
     );
   });
+
+  it('preserves unknown repository visibility and its structured warning', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'greenci-cli-test-'));
+    temporaryDirectories.push(directory);
+    const result = await replayFixture(
+      resolve('fixtures/workflow-runs/repository-visibility-unknown.json'),
+      join(directory, 'report.json'),
+    );
+    expect(result.report.identity.repositoryVisibility).toBe('unknown');
+    expect(result.report.warnings[0]?.code).toBe(
+      'REPOSITORY_METADATA_UNAVAILABLE',
+    );
+    expect(result.report.current.runnerSeconds).toBe(60);
+  });
 });

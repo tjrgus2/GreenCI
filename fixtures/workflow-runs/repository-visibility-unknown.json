@@ -1,0 +1,44 @@
+{
+  "identity": {
+    "owner": "greenci-dev",
+    "repository": "greenci-demo",
+    "workflowId": 43,
+    "workflowPath": ".github/workflows/manual.yml",
+    "runId": 1002,
+    "runAttempt": 1,
+    "headSha": "fedcba9876543210",
+    "headBranch": "main",
+    "event": "workflow_dispatch",
+    "repositoryVisibility": "unknown"
+  },
+  "jobs": [
+    {
+      "id": 11,
+      "apiName": "build",
+      "runnerLabels": ["ubuntu-latest"],
+      "runnerClass": "linux-x64",
+      "startedAt": "2026-07-20T13:00:00.000Z",
+      "completedAt": "2026-07-20T13:01:00.000Z",
+      "conclusion": "success",
+      "steps": []
+    },
+    {
+      "id": 12,
+      "apiName": "greenci",
+      "runnerLabels": ["ubuntu-latest"],
+      "runnerClass": "linux-x64",
+      "startedAt": "2026-07-20T13:01:10.000Z",
+      "conclusion": "unknown",
+      "steps": []
+    }
+  ],
+  "currentJobName": "greenci",
+  "generatedAt": "2026-07-20T13:01:30.000Z",
+  "warnings": [
+    {
+      "code": "REPOSITORY_METADATA_UNAVAILABLE",
+      "source": "github-api",
+      "message": "GitHub repository metadata could not be retrieved; visibility is unknown."
+    }
+  ]
+}

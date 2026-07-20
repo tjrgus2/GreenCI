@@ -26,7 +26,7 @@ export const WorkflowRunIdentitySchema = z
     baseBranch: z.string().optional(),
     event: z.string().min(1),
     pullRequestNumber: z.number().int().positive().optional(),
-    repositoryVisibility: z.enum(['public', 'private', 'internal']),
+    repositoryVisibility: z.enum(['public', 'private', 'internal', 'unknown']),
   })
   .strict();
 
@@ -61,6 +61,26 @@ export const NormalizedJobSchema = z
   })
   .strict();
 
+/** A machine-readable non-fatal problem preserved in reports. */
+export const AnalysisWarningSchema = z
+  .object({
+    code: z.enum([
+      'ANALYZER_EXCLUSION_HEURISTIC',
+      'ANALYZER_NOT_IDENTIFIED',
+      'JOB_TIMESTAMPS_INCOMPLETE',
+      'STEP_TIMESTAMPS_INCOMPLETE',
+      'REPOSITORY_VISIBILITY_UNKNOWN',
+      'REPOSITORY_METADATA_UNAVAILABLE',
+      'LOCALE_FALLBACK',
+      'FAILURE_LOG_PARSING_DISABLED',
+      'SUMMARY_PUBLISH_FAILED',
+      'ARTIFACT_UPLOAD_FAILED',
+    ]),
+    source: z.enum(['core', 'github-api', 'action']),
+    message: z.string().min(1),
+  })
+  .strict();
+
 /** Validated input accepted by the deterministic analysis orchestrator. */
 export const AnalyzeWorkflowInputSchema = z
   .object({
@@ -68,6 +88,7 @@ export const AnalyzeWorkflowInputSchema = z
     jobs: z.array(NormalizedJobSchema),
     currentJobName: z.string().min(1).optional(),
     generatedAt: z.string().datetime({ offset: true }),
+    warnings: z.array(AnalysisWarningSchema).default([]),
   })
   .strict();
 
@@ -117,7 +138,7 @@ export const AnalysisReportSchema = z
     jobs: z.array(NormalizedJobSchema),
     parallelism: ParallelismSchema,
     analyzerExclusion: ExclusionSchema,
-    warnings: z.array(z.string()),
+    warnings: z.array(AnalysisWarningSchema),
   })
   .strict();
 
@@ -127,3 +148,4 @@ export type NormalizedStep = z.infer<typeof NormalizedStepSchema>;
 export type NormalizedJob = z.infer<typeof NormalizedJobSchema>;
 export type AnalyzeWorkflowInput = z.infer<typeof AnalyzeWorkflowInputSchema>;
 export type AnalysisReport = z.infer<typeof AnalysisReportSchema>;
+export type AnalysisWarning = z.infer<typeof AnalysisWarningSchema>;

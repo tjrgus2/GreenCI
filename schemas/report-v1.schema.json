@@ -84,7 +84,10 @@
         "heuristic": { "type": "boolean" }
       }
     },
-    "warnings": { "type": "array", "items": { "type": "string" } }
+    "warnings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/warning" }
+    }
   },
   "$defs": {
     "identity": {
@@ -115,8 +118,31 @@
         "event": { "type": "string", "minLength": 1 },
         "pullRequestNumber": { "type": "integer", "minimum": 1 },
         "repositoryVisibility": {
-          "enum": ["public", "private", "internal"]
+          "enum": ["public", "private", "internal", "unknown"]
         }
+      }
+    },
+    "warning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "source", "message"],
+      "properties": {
+        "code": {
+          "enum": [
+            "ANALYZER_EXCLUSION_HEURISTIC",
+            "ANALYZER_NOT_IDENTIFIED",
+            "JOB_TIMESTAMPS_INCOMPLETE",
+            "STEP_TIMESTAMPS_INCOMPLETE",
+            "REPOSITORY_VISIBILITY_UNKNOWN",
+            "REPOSITORY_METADATA_UNAVAILABLE",
+            "LOCALE_FALLBACK",
+            "FAILURE_LOG_PARSING_DISABLED",
+            "SUMMARY_PUBLISH_FAILED",
+            "ARTIFACT_UPLOAD_FAILED"
+          ]
+        },
+        "source": { "enum": ["core", "github-api", "action"] },
+        "message": { "type": "string", "minLength": 1 }
       }
     },
     "step": {
