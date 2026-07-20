@@ -1,0 +1,23 @@
+{
+  "name": "@greenci/core",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Pure GreenCI workflow analysis engine",
+  "license": "Apache-2.0",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b"
+  },
+  "dependencies": {
+    "zod": "latest"
+  }
+}

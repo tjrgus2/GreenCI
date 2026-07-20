@@ -1,0 +1,7 @@
+node_modules/
+coverage/
+greenci-report.json
+packages/core/dist/
+packages/cli/dist/
+packages/github-action/lib/
+*.tsbuildinfo

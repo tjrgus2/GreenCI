@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://greenci.dev/schemas/report-v1.schema.json",
+  "title": "GreenCI Week 1 Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "greenciVersion",
+    "identity",
+    "current",
+    "jobs",
+    "parallelism",
+    "analyzerExclusion",
+    "warnings"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "greenciVersion": { "type": "string" },
+    "identity": { "$ref": "#/$defs/identity" },
+    "current": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "wallClockSeconds",
+        "activeSeconds",
+        "runnerSeconds",
+        "jobsAnalyzed",
+        "stepsAnalyzed"
+      ],
+      "properties": {
+        "wallClockSeconds": { "type": "number", "minimum": 0 },
+        "activeSeconds": { "type": "number", "minimum": 0 },
+        "runnerSeconds": { "type": "number", "minimum": 0 },
+        "jobsAnalyzed": { "type": "integer", "minimum": 0 },
+        "stepsAnalyzed": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "jobs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/job" }
+    },
+    "parallelism": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "peakConcurrency",
+        "averageConcurrency",
+        "runnerTimeToWallClockRatio",
+        "idleSeconds",
+        "timeline"
+      ],
+      "properties": {
+        "peakConcurrency": { "type": "integer", "minimum": 0 },
+        "averageConcurrency": { "type": "number", "minimum": 0 },
+        "runnerTimeToWallClockRatio": { "type": "number", "minimum": 0 },
+        "idleSeconds": { "type": "number", "minimum": 0 },
+        "timeline": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["at", "concurrency"],
+            "properties": {
+              "at": { "type": "string", "format": "date-time" },
+              "concurrency": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "analyzerExclusion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["excludedJobIds", "method", "heuristic"],
+      "properties": {
+        "excludedJobIds": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0 }
+        },
+        "method": { "enum": ["name", "in-progress", "none"] },
+        "heuristic": { "type": "boolean" }
+      }
+    },
+    "warnings": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner",
+        "repository",
+        "workflowId",
+        "workflowPath",
+        "runId",
+        "runAttempt",
+        "headSha",
+        "headBranch",
+        "event",
+        "repositoryVisibility"
+      ],
+      "properties": {
+        "owner": { "type": "string", "minLength": 1 },
+        "repository": { "type": "string", "minLength": 1 },
+        "workflowId": { "type": "integer", "minimum": 0 },
+        "workflowPath": { "type": "string", "minLength": 1 },
+        "runId": { "type": "integer", "minimum": 0 },
+        "runAttempt": { "type": "integer", "minimum": 1 },
+        "headSha": { "type": "string", "minLength": 1 },
+        "headBranch": { "type": "string" },
+        "baseBranch": { "type": "string" },
+        "event": { "type": "string", "minLength": 1 },
+        "pullRequestNumber": { "type": "integer", "minimum": 1 },
+        "repositoryVisibility": {
+          "enum": ["public", "private", "internal"]
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "index",
+        "name",
+        "normalizedName",
+        "conclusion",
+        "isRunnerInternal"
+      ],
+      "properties": {
+        "index": { "type": "integer", "minimum": 0 },
+        "name": { "type": "string" },
+        "normalizedName": { "type": "string" },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "durationSeconds": { "type": "number", "minimum": 0 },
+        "conclusion": { "$ref": "#/$defs/conclusion" },
+        "isRunnerInternal": { "type": "boolean" }
+      }
+    },
+    "job": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "apiName",
+        "runnerLabels",
+        "runnerClass",
+        "conclusion",
+        "steps"
+      ],
+      "properties": {
+        "id": { "type": "integer", "minimum": 0 },
+        "apiName": { "type": "string" },
+        "logicalJobId": { "type": "string" },
+        "matrixSignature": { "type": "string" },
+        "runnerLabels": { "type": "array", "items": { "type": "string" } },
+        "runnerClass": { "type": "string" },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "durationSeconds": { "type": "number", "minimum": 0 },
+        "conclusion": { "$ref": "#/$defs/conclusion" },
+        "steps": { "type": "array", "items": { "$ref": "#/$defs/step" } }
+      }
+    },
+    "conclusion": {
+      "enum": [
+        "success",
+        "failure",
+        "cancelled",
+        "skipped",
+        "timed_out",
+        "neutral",
+        "action_required",
+        "unknown"
+      ]
+    }
+  }
+}

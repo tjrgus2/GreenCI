@@ -1,0 +1,5 @@
+packages/github-action/dist/
+packages/github-action/lib/
+coverage/
+pnpm-lock.yaml
+GREENCI_TECHNICAL_DESIGN.md

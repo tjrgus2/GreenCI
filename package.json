@@ -1,0 +1,35 @@
+{
+  "name": "greenci",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "GitHub-native CI efficiency analysis",
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "bundle": "pnpm build && tsx scripts/bundle-action.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "test": "pnpm build && vitest run",
+    "test:coverage": "pnpm build && vitest run --coverage",
+    "typecheck": "tsc -b && tsc -p tsconfig.test.json",
+    "verify:dist": "tsx scripts/verify-dist.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "latest",
+    "@types/node": "latest",
+    "@vitest/coverage-v8": "latest",
+    "eslint": "latest",
+    "fast-check": "latest",
+    "prettier": "latest",
+    "tsx": "latest",
+    "typescript": "6.0.3",
+    "typescript-eslint": "latest",
+    "vitest": "latest"
+  }
+}

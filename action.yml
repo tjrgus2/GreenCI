@@ -1,0 +1,50 @@
+name: GreenCI
+description: Analyze GitHub Actions runtime and current-run CI efficiency
+author: GreenCI Contributors
+
+branding:
+  icon: activity
+  color: green
+
+inputs:
+  github-token:
+    description: GitHub token used to read Actions data
+    required: true
+  config-path:
+    description: Repository-relative path to GreenCI configuration
+    required: false
+    default: .greenci.yml
+  locale:
+    description: Report locale, en or ko
+    required: false
+    default: en
+  baseline-runs:
+    description: Number of successful base-branch runs to analyze
+    required: false
+    default: '7'
+  parse-failure-logs:
+    description: Parse bounded failed-job logs locally
+    required: false
+    default: 'false'
+  upload-report-artifact:
+    description: Upload greenci-report.json as an artifact
+    required: false
+    default: 'true'
+
+outputs:
+  report-path:
+    description: Path to greenci-report.json
+  runner-seconds:
+    description: Total analyzed runner time in seconds
+  carbon-p50-grams:
+    description: Median estimated operational emissions
+  carbon-p95-grams:
+    description: p95 estimated operational emissions
+  list-price-usd:
+    description: Estimated gross list-price equivalent
+  policy-conclusion:
+    description: pass, warn, fail, or skipped
+
+runs:
+  using: node24
+  main: packages/github-action/dist/index.js

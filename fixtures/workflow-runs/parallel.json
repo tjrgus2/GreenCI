@@ -1,0 +1,89 @@
+{
+  "identity": {
+    "owner": "greenci-dev",
+    "repository": "greenci-demo",
+    "workflowId": 42,
+    "workflowPath": ".github/workflows/ci.yml",
+    "runId": 1001,
+    "runAttempt": 1,
+    "headSha": "0123456789abcdef",
+    "headBranch": "feature/week-one",
+    "baseBranch": "main",
+    "event": "pull_request",
+    "pullRequestNumber": 17,
+    "repositoryVisibility": "public"
+  },
+  "jobs": [
+    {
+      "id": 1,
+      "apiName": "build",
+      "runnerLabels": ["ubuntu-latest"],
+      "runnerClass": "linux-x64",
+      "startedAt": "2026-07-20T12:00:00.000Z",
+      "completedAt": "2026-07-20T12:05:00.000Z",
+      "conclusion": "success",
+      "steps": [
+        {
+          "index": 1,
+          "name": "Build",
+          "normalizedName": "build",
+          "startedAt": "2026-07-20T12:00:15.000Z",
+          "completedAt": "2026-07-20T12:04:45.000Z",
+          "conclusion": "success",
+          "isRunnerInternal": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "apiName": "test",
+      "runnerLabels": ["windows-latest"],
+      "runnerClass": "windows-x64",
+      "startedAt": "2026-07-20T12:00:00.000Z",
+      "completedAt": "2026-07-20T12:08:00.000Z",
+      "conclusion": "success",
+      "steps": [
+        {
+          "index": 1,
+          "name": "Run tests",
+          "normalizedName": "run tests",
+          "startedAt": "2026-07-20T12:00:20.000Z",
+          "completedAt": "2026-07-20T12:07:50.000Z",
+          "conclusion": "success",
+          "isRunnerInternal": false
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "apiName": "lint",
+      "runnerLabels": ["macos-latest"],
+      "runnerClass": "macos-x64",
+      "startedAt": "2026-07-20T12:00:00.000Z",
+      "completedAt": "2026-07-20T12:02:00.000Z",
+      "conclusion": "success",
+      "steps": [
+        {
+          "index": 1,
+          "name": "Lint | source",
+          "normalizedName": "lint | source",
+          "startedAt": "2026-07-20T12:00:10.000Z",
+          "completedAt": "2026-07-20T12:01:50.000Z",
+          "conclusion": "success",
+          "isRunnerInternal": false
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "apiName": "greenci",
+      "runnerLabels": ["ubuntu-latest"],
+      "runnerClass": "linux-x64",
+      "startedAt": "2026-07-20T12:08:10.000Z",
+      "conclusion": "unknown",
+      "steps": []
+    }
+  ],
+  "currentJobName": "greenci",
+  "generatedAt": "2026-07-20T12:08:30.000Z"
+}

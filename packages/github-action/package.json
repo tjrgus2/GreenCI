@@ -1,0 +1,22 @@
+{
+  "name": "@greenci/github-action",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "GreenCI GitHub JavaScript Action",
+  "scripts": {
+    "build": "tsc -b",
+    "bundle": "tsx ../../scripts/bundle-action.ts",
+    "typecheck": "tsc -b"
+  },
+  "dependencies": {
+    "@actions/artifact": "latest",
+    "@actions/core": "latest",
+    "@actions/github": "latest",
+    "@greenci/core": "workspace:*",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "latest"
+  }
+}
