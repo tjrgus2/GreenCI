@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Enable pnpm
+        run: corepack enable pnpm
+
+      - name: Set up Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install from lockfile
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Strict type check
+        run: pnpm typecheck
+
+      - name: Verify version consistency
+        run: pnpm versions:verify
+
+      - name: Verify dataset manifest and embedded copy
+        run: pnpm data:verify
+
+      - name: Verify published JSON Schemas
+        run: pnpm schemas:verify
+
+      - name: Unit, property, and security tests with coverage
+        run: pnpm test:coverage
+
+      - name: Build the Action bundle
+        run: pnpm bundle
+
+      - name: Verify the committed distribution byte for byte
+        run: pnpm verify:dist
+
+      - name: Reproduce the offline demonstration
+        run: pnpm demo
+
+      - name: Benchmark the analysis engine
+        run: pnpm benchmark
+
+      - name: Generate the software bill of materials
+        run: pnpm sbom:generate --out greenci-sbom.json
+
+      - name: Upload verification artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verification-${{ github.run_id }}
+          path: |
+            coverage/coverage-summary.json
+            greenci-sbom.json
+          retention-days: 7
+          if-no-files-found: warn

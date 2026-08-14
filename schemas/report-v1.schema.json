@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://greenci.dev/schemas/report-v1.schema.json",
-  "title": "GreenCI Report 1.2.0",
+  "title": "GreenCI Report 1.3.0",
   "type": "object",
   "properties": {
-    "schemaVersion": { "type": "string", "const": "1.2.0" },
+    "schemaVersion": { "type": "string", "const": "1.3.0" },
     "generatedAt": {
       "type": "string",
       "format": "date-time",
@@ -598,6 +598,85 @@
         "nonCriticalHotspots",
         "reasons"
       ],
+      "additionalProperties": false
+    },
+    "whatIf": {
+      "type": "object",
+      "properties": {
+        "available": { "type": "boolean" },
+        "method": {
+          "type": "string",
+          "enum": ["dag", "runner-only", "unavailable"]
+        },
+        "disclaimer": { "type": "string", "minLength": 1 },
+        "results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "scenarioId": { "type": "string", "minLength": 1 },
+              "targetLabel": { "type": "string" },
+              "speedupPercent": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "onCriticalPath": { "type": "boolean" },
+              "method": { "type": "string", "enum": ["dag", "runner-only"] },
+              "criticalPathSeconds": {
+                "type": "object",
+                "properties": {
+                  "before": { "type": "number" },
+                  "after": { "type": "number" },
+                  "changePercent": { "type": "number" }
+                },
+                "required": ["before", "after", "changePercent"],
+                "additionalProperties": false
+              },
+              "runnerSeconds": {
+                "type": "object",
+                "properties": {
+                  "before": { "type": "number" },
+                  "after": { "type": "number" },
+                  "changePercent": { "type": "number" }
+                },
+                "required": ["before", "after", "changePercent"],
+                "additionalProperties": false
+              },
+              "listPriceUsd": {
+                "type": "object",
+                "properties": {
+                  "before": { "type": "number" },
+                  "after": { "type": "number" },
+                  "changePercent": { "type": "number" }
+                },
+                "required": ["before", "after", "changePercent"],
+                "additionalProperties": false
+              },
+              "carbonP50Grams": {
+                "type": "object",
+                "properties": {
+                  "before": { "type": "number" },
+                  "after": { "type": "number" },
+                  "changePercent": { "type": "number" }
+                },
+                "required": ["before", "after", "changePercent"],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "scenarioId",
+              "targetLabel",
+              "speedupPercent",
+              "onCriticalPath",
+              "method",
+              "runnerSeconds"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["available", "method", "disclaimer", "results"],
       "additionalProperties": false
     },
     "failures": {
@@ -1198,6 +1277,7 @@
     "shape",
     "baseline",
     "criticalPath",
+    "whatIf",
     "failures",
     "recommendations",
     "policy",

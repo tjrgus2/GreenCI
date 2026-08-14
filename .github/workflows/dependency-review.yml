@@ -1,0 +1,31 @@
+name: Dependency review
+
+on:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  review:
+    name: Review dependency changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
+        with:
+          # GreenCI ships its dependency closure inside the Action bundle, so a
+          # moderate advisory in a runtime dependency is worth blocking on.
+          fail-on-severity: moderate
+          comment-summary-in-pr: on-failure
+          # Copyleft licences would change the terms under which the bundled
+          # distribution can be redistributed.
+          deny-licenses: AGPL-1.0-or-later, AGPL-3.0-or-later, GPL-2.0-or-later, GPL-3.0-or-later

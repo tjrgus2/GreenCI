@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { GREENCI_VERSION } from '@greenci/core';
 import { replayFixture } from './replay.js';
 
 /** Build the GreenCI command-line interface. */
@@ -7,7 +8,7 @@ export function createProgram(): Command {
   program
     .name('greenci')
     .description('Offline tools for GreenCI')
-    .version('0.1.0');
+    .version(GREENCI_VERSION);
   program
     .command('replay')
     .description('Analyze a sanitized normalized workflow fixture')

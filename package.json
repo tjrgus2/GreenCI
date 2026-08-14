@@ -1,10 +1,18 @@
 {
   "name": "greenci",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "GitHub-native CI efficiency analysis",
+  "description": "GitHub-native CI performance regression, cost, and carbon analyzer",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tjrgus2/GreenCI.git"
+  },
+  "homepage": "https://github.com/tjrgus2/GreenCI#readme",
+  "bugs": {
+    "url": "https://github.com/tjrgus2/GreenCI/issues"
+  },
   "packageManager": "pnpm@11.9.0",
   "engines": {
     "node": ">=24"
@@ -22,21 +30,26 @@
     "data:write": "tsx scripts/datasets.ts write",
     "data:verify": "tsx scripts/datasets.ts verify",
     "schemas:write": "tsx scripts/schemas.ts write",
-    "schemas:verify": "tsx scripts/schemas.ts verify"
+    "schemas:verify": "tsx scripts/schemas.ts verify",
+    "versions:verify": "tsx scripts/versions.ts verify",
+    "benchmark": "pnpm build && tsx scripts/benchmark.ts",
+    "demo": "pnpm build && tsx scripts/demo.ts",
+    "sbom:generate": "tsx scripts/sbom.ts",
+    "verify:all": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm versions:verify && pnpm data:verify && pnpm schemas:verify && pnpm test:coverage && pnpm bundle && pnpm verify:dist && pnpm demo"
   },
   "devDependencies": {
-    "@eslint/js": "latest",
+    "@eslint/js": "^10.0.1",
     "@greenci/core": "workspace:*",
-    "@types/node": "latest",
-    "@vitest/coverage-v8": "latest",
-    "ajv": "latest",
-    "eslint": "latest",
-    "fast-check": "latest",
-    "prettier": "latest",
-    "tsx": "latest",
+    "@types/node": "^26.2.0",
+    "@vitest/coverage-v8": "^4.1.10",
+    "ajv": "^8.20.0",
+    "eslint": "^10.8.1",
+    "fast-check": "^4.9.0",
+    "prettier": "^3.9.6",
+    "tsx": "^4.23.12",
     "typescript": "6.0.3",
-    "typescript-eslint": "latest",
-    "vitest": "latest",
-    "zod": "latest"
+    "typescript-eslint": "^8.67.0",
+    "vitest": "^4.1.10",
+    "zod": "^4.4.3"
   }
 }

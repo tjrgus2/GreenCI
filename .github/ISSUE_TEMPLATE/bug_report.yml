@@ -1,0 +1,60 @@
+name: Bug report
+description: GreenCI produced a wrong, missing, or misleading result
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do not paste raw CI logs, tokens, or unredacted artifacts. The
+        JSON report is usually enough, and GreenCI already redacts
+        credential-shaped strings from anything it reports.
+
+  - type: input
+    id: version
+    attributes:
+      label: GreenCI version
+      description: The `greenciVersion` field of `greenci-report.json`, or the tag or SHA you pinned.
+      placeholder: 1.0.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened instead
+      description: Include the relevant warning codes from the report if there are any.
+    validations:
+      required: true
+
+  - type: textarea
+    id: report
+    attributes:
+      label: Relevant part of greenci-report.json
+      description: Paste the section that is wrong. Redact repository names if you need to.
+      render: json
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Your .greenci.yml
+      render: yaml
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where did you see it
+      multiple: true
+      options:
+        - Pull-request comment
+        - Job Summary
+        - greenci-report.json
+        - Action outputs
+        - Annotations
+        - Offline CLI replay

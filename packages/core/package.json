@@ -1,6 +1,6 @@
 {
   "name": "@greenci/core",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "description": "Pure GreenCI workflow analysis engine",
   "license": "Apache-2.0",
@@ -19,6 +19,6 @@
   },
   "dependencies": {
     "fast-xml-parser": "^5.10.1",
-    "zod": "latest"
+    "zod": "^4.4.3"
   }
 }

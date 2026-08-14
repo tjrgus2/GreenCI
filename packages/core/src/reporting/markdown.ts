@@ -31,6 +31,7 @@ import {
   renderPolicySection,
   renderRecommendationsSection,
   renderTestsSection,
+  renderWhatIfSection,
 } from './sections.js';
 
 export { escapeMarkdown, formatDuration } from './format.js';
@@ -340,6 +341,8 @@ export function renderJobSummary(report: AnalysisReport): string {
     ),
     '',
     ...renderCriticalPathSection(report, translate),
+    '',
+    ...renderWhatIfSection(report, translate),
     '',
     ...renderBaselineSection(report, translate),
     '',

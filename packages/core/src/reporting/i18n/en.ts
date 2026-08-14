@@ -98,6 +98,21 @@ export const en = {
   'baseline.excludedShape': 'Runs excluded by workflow shape',
   'baseline.fingerprint': 'Workflow shape fingerprint',
 
+  'section.whatIf': 'What if? (counterfactual estimates)',
+  'whatIf.unavailable':
+    'No counterfactual scenario could be estimated for this run.',
+  'whatIf.scenario': 'Scenario',
+  'whatIf.criticalPath': 'Critical path',
+  'whatIf.runnerTime': 'Runner time',
+  'whatIf.listPrice': 'List-price equivalent',
+  'whatIf.carbon': 'Carbon p50',
+  'whatIf.onCriticalPath':
+    '{target} is on the critical path, so making it {percent} faster shortens how long developers wait.',
+  'whatIf.offCriticalPath':
+    '{target} is not on the critical path, so making it {percent} faster frees runner time, cost, and carbon without shortening the wait.',
+  'whatIf.runnerOnly':
+    'The workflow graph was unavailable, so only duration-derived metrics are estimated.',
+
   'section.criticalPath': 'Critical path',
   'section.hotspots': 'Non-critical resource hotspots',
   'section.recommendations': 'Recommendations',

@@ -18,6 +18,7 @@ import { excludeAnalyzerJob, type AnalyzerExclusion } from './exclusion.js';
 import { analyzeFailures } from './failures.js';
 import { analyzeRuntime, withCalculatedDurations } from './runtime.js';
 import { buildWorkflowShape, withLogicalIdentity } from './shape.js';
+import { analyzeWhatIf } from './what-if.js';
 import { dataManifest } from '../datasets/index.js';
 import { resolveConfig, type ResolvedConfig } from '../domain/config.js';
 import { evaluatePolicies } from '../policy/index.js';
@@ -36,8 +37,14 @@ import {
 import { estimateCarbon, type CarbonEstimate } from '../estimation/carbon.js';
 import { estimateCost, type CostEstimate } from '../estimation/cost.js';
 
-/** Published GreenCI version recorded in every report. */
-export const GREENCI_VERSION = '0.3.0';
+/**
+ * Published GreenCI version recorded in every report.
+ *
+ * This is the single source of truth. `pnpm versions:verify` fails when a
+ * package manifest disagrees with it, because a report reader uses this value
+ * to reproduce the analysis.
+ */
+export const GREENCI_VERSION = '1.0.0';
 
 function referenceYear(generatedAt: string): number {
   const parsed = Date.parse(generatedAt);
@@ -122,7 +129,7 @@ function collectWarnings(
     warnings.push({
       code: 'BASELINE_INSUFFICIENT_SAMPLES',
       source: 'core',
-      message: `Only ${baseline.sampleCount} comparable baseline runs were available; ${baseline.minimumSamples} are required before a regression is claimed.`,
+      message: `Only ${baseline.sampleCount} comparable baseline runs were available; ${baseline.minimumSamples} are required before a regression is claimed. Merge more runs to the baseline branch, or lower \`baseline.minimum-samples\` in .greenci.yml.`,
     });
   }
   if (baseline.status === 'shape-changed' || baseline.excludedForShape > 0) {
@@ -137,21 +144,21 @@ function collectWarnings(
     warnings.push({
       code: 'RUNNER_PRICE_UNKNOWN',
       source: 'core',
-      message: `No price is applied to unknown runner classes: ${cost.unknownRunnerClasses.join(', ')}.`,
+      message: `No price is applied to unknown runner classes: ${cost.unknownRunnerClasses.join(', ')}. Those jobs are excluded from the cost total; report the runner label so the pricing dataset can cover it.`,
     });
   }
   if (carbon !== undefined && carbon.unknownRunnerClasses.length > 0) {
     warnings.push({
       code: 'RUNNER_MODEL_UNKNOWN',
       source: 'core',
-      message: `No power model is applied to unknown runner classes: ${carbon.unknownRunnerClasses.join(', ')}.`,
+      message: `No power model is applied to unknown runner classes: ${carbon.unknownRunnerClasses.join(', ')}. Those jobs are excluded from the carbon total; report the runner label so the power dataset can cover it.`,
     });
   }
   if (carbon !== undefined && !carbon.regionResolved) {
     warnings.push({
       code: 'CARBON_REGION_UNKNOWN',
       source: 'core',
-      message: `The configured carbon region is not in the bundled dataset; GreenCI used ${carbon.region} and lowered the data-quality score.`,
+      message: `The configured carbon region is not in the bundled dataset, so GreenCI used ${carbon.region} and lowered the data-quality score. See docs/data-sources.md for the regions \`carbon.region\` accepts.`,
     });
   }
 
@@ -305,6 +312,32 @@ export function analyzeWorkflow(input: unknown): AnalysisReport {
   const criticalPath = criticalPathFor(jobs, runtime.wallClockSeconds);
   const failures = analyzeFailures(jobs);
 
+  const whatIf = config.analysis.whatIf.enabled
+    ? analyzeWhatIf({
+        jobs,
+        definition,
+        criticalPath,
+        speedupPercent: config.analysis.whatIf.speedupPercent,
+        maxScenarios: config.analysis.whatIf.maxScenarios,
+        estimateCost: (candidates) =>
+          estimateCost(candidates, validated.identity),
+        estimateCarbon: (candidates) =>
+          carbonFor(
+            candidates,
+            validated.identity.runId,
+            config,
+            resolution.configHash,
+            year,
+          ),
+      })
+    : {
+        available: false,
+        method: 'unavailable' as const,
+        results: [],
+        disclaimer:
+          'Counterfactual analysis is disabled by `analysis.what-if.enabled`.',
+      };
+
   const cost = config.cost.enabled
     ? estimateCost(jobs, validated.identity)
     : undefined;
@@ -430,6 +463,7 @@ export function analyzeWorkflow(input: unknown): AnalysisReport {
     },
     baseline,
     criticalPath,
+    whatIf,
     failures,
     recommendations: recommendationResult.recommendations,
     policy,

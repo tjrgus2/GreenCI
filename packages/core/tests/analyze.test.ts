@@ -74,7 +74,7 @@ describe('analyzeWorkflow', () => {
     expect(report.current.runnerSeconds).toBe(60);
     expect(report.current.wallClockSeconds).toBe(60);
     expect(report.analyzerExclusion.method).toBe('name');
-    expect(report.schemaVersion).toBe('1.2.0');
+    expect(report.schemaVersion).toBe('1.3.0');
     expect(report.locale).toBe('en');
     expect(report.shape.fingerprint).toMatch(/^[0-9a-f]{64}$/u);
     expect(report.dataManifest.length).toBeGreaterThan(0);

@@ -51,7 +51,43 @@ describe('configuration resolution', () => {
     expect(result.config).toEqual(DEFAULT_CONFIG);
     expect(result.warnings[0]?.code).toBe('CONFIG_INVALID');
     expect(result.warnings[0]?.message).toContain('unknown key(s) `verison`');
+    expect(result.warnings[0]?.message).toContain('did you mean `version`?');
     expect(result.warnings[0]?.message).toContain('(root)');
+  });
+
+  it('suggests the intended key inside a nested section', () => {
+    expect(
+      resolveConfig({ carbon: { regoin: 'KR' } }).warnings[0]?.message,
+    ).toContain('did you mean `region`?');
+    expect(
+      resolveConfig({ baseline: { 'workflow-shape-threshhold': 0.9 } })
+        .warnings[0]?.message,
+    ).toContain('did you mean `workflow-shape-threshold`?');
+    expect(
+      resolveConfig({ baseline: { statistics: { 'regresion-percent': 20 } } })
+        .warnings[0]?.message,
+    ).toContain('did you mean `regression-percent`?');
+  });
+
+  it('suggests an optional key that has no default', () => {
+    expect(
+      resolveConfig({ baseline: { brnach: 'main' } }).warnings[0]?.message,
+    ).toContain('did you mean `branch`?');
+  });
+
+  it('suggests a key inside an array element', () => {
+    expect(
+      resolveConfig({
+        policy: { rules: [{ metrik: 'failed-jobs', value: 0 }] },
+      }).warnings[0]?.message,
+    ).toContain('did you mean `metric`?');
+  });
+
+  it('offers no suggestion for a key that resembles nothing', () => {
+    const message =
+      resolveConfig({ zzzzqqqwwww: true }).warnings[0]?.message ?? '';
+    expect(message).toContain('`zzzzqqqwwww`');
+    expect(message).not.toContain('did you mean');
   });
 
   it('locates a nested value error by path', () => {

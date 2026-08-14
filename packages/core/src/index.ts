@@ -116,6 +116,18 @@ export type {
   CriticalPathNode,
   ParallelHotspot,
 } from './analysis/critical-path.js';
+export { analyzeWhatIf } from './analysis/what-if.js';
+export type {
+  WhatIfAnalysis,
+  WhatIfDelta,
+  WhatIfResult,
+  WhatIfScenario,
+} from './analysis/what-if.js';
+export {
+  closestKey,
+  describeUnknownKey,
+  editDistance,
+} from './domain/suggest.js';
 export { analyzeFailures } from './analysis/failures.js';
 export type { FailureSummary, JobFailure } from './analysis/failures.js';
 export {

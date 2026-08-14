@@ -1,0 +1,57 @@
+version: 2
+
+updates:
+  # A single grouped weekly pull request instead of one per dependency: the whole
+  # tree is bundled into the committed Action distribution, so updates have to be
+  # verified together anyway.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '05:00'
+      timezone: Etc/UTC
+    open-pull-requests-limit: 3
+    versioning-strategy: increase
+    commit-message:
+      prefix: 'chore(deps)'
+      include: scope
+    groups:
+      runtime:
+        applies-to: version-updates
+        patterns:
+          - '@actions/*'
+          - zod
+          - yaml
+          - fast-xml-parser
+          - commander
+      toolchain:
+        applies-to: version-updates
+        patterns:
+          - '*'
+        exclude-patterns:
+          - '@actions/*'
+          - zod
+          - yaml
+          - fast-xml-parser
+          - commander
+    ignore:
+      # TypeScript is pinned exactly; a compiler bump is a deliberate change
+      # because it can alter emitted output and therefore the committed bundle.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '05:30'
+      timezone: Etc/UTC
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: 'chore(actions)'
+    groups:
+      actions:
+        patterns:
+          - '*'

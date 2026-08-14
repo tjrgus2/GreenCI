@@ -1,0 +1,252 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to release, for example v1.0.0-rc.1
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  verify:
+    name: Verify the release candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    permissions:
+      contents: read
+
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+      version: ${{ steps.resolve.outputs.version }}
+      prerelease: ${{ steps.resolve.outputs.prerelease }}
+
+    steps:
+      - name: Checkout the tag
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Resolve and validate the tag
+        id: resolve
+        env:
+          RAW_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          tag="$RAW_TAG"
+          if ! printf '%s' "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'; then
+            echo "::error::Tag '$tag' is not a semantic version tag such as v1.0.0 or v1.0.0-rc.1"
+            exit 1
+          fi
+          version="${tag#v}"
+          if printf '%s' "$tag" | grep -q -- '-'; then prerelease=true; else prerelease=false; fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+
+      - name: Require the tag to be an ancestor of main
+        env:
+          TAG: ${{ steps.resolve.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor "$(git rev-parse HEAD)" origin/main; then
+            echo "::error::Tag $TAG does not point at a commit contained in main"
+            exit 1
+          fi
+
+      - name: Enable pnpm
+        run: corepack enable pnpm
+
+      - name: Set up Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install from lockfile
+        run: pnpm install --frozen-lockfile
+
+      - name: Require the tag to match GREENCI_VERSION
+        env:
+          VERSION: ${{ steps.resolve.outputs.version }}
+        run: |
+          set -euo pipefail
+          pnpm versions:verify
+          declared="$(node -e "import('@greenci/core').then(m => process.stdout.write(m.GREENCI_VERSION))")"
+          if [ "$declared" != "$VERSION" ]; then
+            echo "::error::Tag version $VERSION does not match GREENCI_VERSION $declared"
+            exit 1
+          fi
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Strict type check
+        run: pnpm typecheck
+
+      - name: Verify dataset manifest and embedded copy
+        run: pnpm data:verify
+
+      - name: Verify published JSON Schemas
+        run: pnpm schemas:verify
+
+      - name: Tests with coverage
+        run: pnpm test:coverage
+
+      - name: Build the Action bundle
+        run: pnpm bundle
+
+      - name: Verify the committed distribution byte for byte
+        run: pnpm verify:dist
+
+      - name: Reproduce the offline demonstration
+        run: pnpm demo
+
+      - name: Generate the software bill of materials
+        env:
+          VERSION: ${{ steps.resolve.outputs.version }}
+        run: |
+          set -euo pipefail
+          pnpm sbom:generate --out "greenci-${VERSION}-sbom.json"
+
+      - name: Build the release archive
+        env:
+          VERSION: ${{ steps.resolve.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          tar --create --gzip \
+            --file "release/greenci-${VERSION}.tar.gz" \
+            action.yml \
+            LICENSE \
+            README.md \
+            README.ko.md \
+            CHANGELOG.md \
+            SECURITY.md \
+            data \
+            schemas \
+            packages/github-action/dist
+          sha256sum "release/greenci-${VERSION}.tar.gz" > "release/greenci-${VERSION}.tar.gz.sha256"
+          cp "greenci-${VERSION}-sbom.json" release/
+          sha256sum "packages/github-action/dist/index.js" > release/dist-index.js.sha256
+
+      - name: Upload the release candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-${{ steps.resolve.outputs.version }}
+          path: release
+          retention-days: 30
+          if-no-files-found: error
+
+  attest:
+    name: Attest build provenance
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: read
+      # Both are required by the attestation API and are scoped to this job only.
+      id-token: write
+      attestations: write
+
+    steps:
+      - name: Download the release candidate
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-${{ needs.verify.outputs.version }}
+          path: release
+
+      - name: Attest the release archive and the Action bundle
+        uses: actions/attest-build-provenance@96b4a1ef7235a096b17240c259729fdd70c83d45 # v2
+        with:
+          subject-path: |
+            release/greenci-${{ needs.verify.outputs.version }}.tar.gz
+            release/greenci-${{ needs.verify.outputs.version }}-sbom.json
+
+  publish:
+    name: Publish the GitHub release
+    needs: [verify, attest]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout the tag
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.verify.outputs.tag }}
+
+      - name: Download the release candidate
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-${{ needs.verify.outputs.version }}
+          path: release
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.verify.outputs.tag }}
+          VERSION: ${{ needs.verify.outputs.version }}
+          PRERELEASE: ${{ needs.verify.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+          notes="$(mktemp)"
+          {
+            printf 'GreenCI %s\n\n' "$VERSION"
+            printf 'Install by tag for convenience:\n\n'
+            printf '    uses: %s@v1\n\n' "$GITHUB_REPOSITORY"
+            printf 'Install by commit SHA for a stronger supply-chain guarantee:\n\n'
+            printf '    uses: %s@%s\n\n' "$GITHUB_REPOSITORY" "$GITHUB_SHA"
+            printf 'Artifacts\n\n'
+            printf -- '- greenci-%s.tar.gz — action.yml, the verified bundle, datasets, and schemas\n' "$VERSION"
+            printf -- '- greenci-%s-sbom.json — CycloneDX SBOM of the bundled dependency closure\n' "$VERSION"
+            printf -- '- *.sha256 — digests for the archive and the bundle\n\n'
+            printf 'Build provenance is attested; verify with:\n\n'
+            printf '    gh attestation verify greenci-%s.tar.gz --repo %s\n\n' "$VERSION" "$GITHUB_REPOSITORY"
+            printf 'See CHANGELOG.md for the full change list.\n'
+          } > "$notes"
+          flags=(--title "GreenCI $VERSION" --notes-file "$notes" --verify-tag)
+          if [ "$PRERELEASE" = "true" ]; then flags+=(--prerelease); fi
+          gh release create "$TAG" "${flags[@]}" release/*
+
+  major-tag:
+    name: Move the major version tag
+    needs: [verify, publish]
+    # Only a final release owns the floating major tag; a prerelease must not.
+    if: needs.verify.outputs.prerelease == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout the tag
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.verify.outputs.tag }}
+          fetch-depth: 0
+
+      - name: Force the major tag to this release
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          set -euo pipefail
+          major="v${VERSION%%.*}"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag --force --annotate "$major" --message "GreenCI $VERSION"
+          git push --force origin "refs/tags/$major"

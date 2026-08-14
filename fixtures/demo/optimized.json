@@ -1,0 +1,799 @@
+{
+  "identity": {
+    "owner": "greenci",
+    "repository": "demo",
+    "workflowId": 4242,
+    "workflowPath": ".github/workflows/greenci-intelligence.yml",
+    "runId": 920000,
+    "runAttempt": 1,
+    "headSha": "dddddddddddddddddddddddddddddddddd920000",
+    "headBranch": "optimize-ci",
+    "baseBranch": "main",
+    "event": "pull_request",
+    "pullRequestNumber": 3,
+    "repositoryVisibility": "private"
+  },
+  "generatedAt": "2026-08-14T00:30:00.000Z",
+  "config": {
+    "version": 1,
+    "carbon": {
+      "region": "KR",
+      "simulation-samples": 2000
+    },
+    "analysis": {
+      "critical-path": {
+        "enabled": true,
+        "parse-workflow-dag": true
+      },
+      "what-if": {
+        "enabled": true,
+        "speedup-percent": 50
+      }
+    },
+    "policy": {
+      "default-mode": "warn",
+      "rules": [
+        {
+          "metric": "runner-time-regression-percent",
+          "operator": "greater-than",
+          "value": 20,
+          "mode": "warn"
+        }
+      ]
+    }
+  },
+  "workflowDefinition": {
+    "jobs": {
+      "build": {
+        "name": "Build"
+      },
+      "unit-test": {
+        "name": "Unit test",
+        "needs": ["build"]
+      },
+      "integration-test": {
+        "name": "Integration test",
+        "needs": ["unit-test"]
+      },
+      "security": {
+        "name": "Security",
+        "strategy": {
+          "matrix": {
+            "rule": ["secrets", "dependencies", "sast"]
+          }
+        }
+      }
+    }
+  },
+  "jobs": [
+    {
+      "id": 1,
+      "apiName": "Build",
+      "runnerLabels": ["ubuntu-latest"],
+      "runnerClass": "linux-x64",
+      "startedAt": "2026-08-14T00:00:00.000Z",
+      "completedAt": "2026-08-14T00:00:38.000Z",
+      "conclusion": "success",
+      "steps": [
+        {
+          "index": 1,
+          "name": "npm ci",
+          "normalizedName": "npm ci",
+          "startedAt": "2026-08-14T00:00:00.000Z",
+          "completedAt": "2026-08-14T00:00:25.000Z",
+          "conclusion": "success",
+          "isRunnerInternal": false
+        },
+        {
+          "index": 2,
+          "name": "npm run build",
+          "normalizedName": "npm run build",
+          "startedAt": "2026-08-14T00:00:25.000Z",
+          "completedAt": "2026-08-14T00:00:38.000Z",
+          "conclusion": "success",
+          "isRunnerInternal": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "apiName": "Unit test",
+      "runnerLabels": ["ubuntu-latest"],
+      "runnerClass": "linux-x64",
+      "startedAt": "2026-08-14T00:00:38.000Z",
+      "completedAt": "2026-08-14T00:00:58.000Z",
+      "conclusion": "success",
+      "steps": [
+        {
+          "index": 1,
+          "name": "npm ci",
+          "normalizedName": "npm ci",
+          "startedAt": "2026-08-14T00:00:38.000Z",
+          "completedAt": "2026-08-14T00:00:40.000Z",
+          "conclusion": "success",
+          "isRunnerInternal": false
+        },
+        {
+          "index": 2,
+          "name": "npm test",
+          "normalizedName": "npm test",
+          "startedAt": "2026-08-14T00:00:40.000Z",
+          "completedAt": "2026-08-14T00:00:58.000Z",
+          "conclusion": "success",
+          "isRunnerInternal": false
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "apiName": "Integration test",
+      "runnerLabels": ["ubuntu-latest"],
+      "runnerClass": "linux-x64",
+      "startedAt": "2026-08-14T00:00:58.000Z",
+      "completedAt": "2026-08-14T00:01:48.000Z",
+      "conclusion": "success",
+      "steps": [
+        {
+          "index": 1,
+          "name": "npm ci",
+          "normalizedName": "npm ci",
+          "startedAt": "2026-08-14T00:00:58.000Z",
+          "completedAt": "2026-08-14T00:01:00.000Z",
+          "conclusion": "success",
+          "isRunnerInternal": false
+        },
+        {
+          "index": 2,
+          "name": "Run integration tests",
+          "normalizedName": "run integration tests",
+          "startedAt": "2026-08-14T00:01:00.000Z",
+          "completedAt": "2026-08-14T00:01:48.000Z",
+          "conclusion": "success",
+          "isRunnerInternal": false
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "apiName": "Security (secrets)",
+      "runnerLabels": ["ubuntu-latest"],
+      "runnerClass": "linux-x64",
+      "startedAt": "2026-08-14T00:00:00.000Z",
+      "completedAt": "2026-08-14T00:00:43.000Z",
+      "conclusion": "success",
+      "steps": [
+        {
+          "index": 1,
+          "name": "Scan",
+          "normalizedName": "scan",
+          "startedAt": "2026-08-14T00:00:00.000Z",
+          "completedAt": "2026-08-14T00:00:43.000Z",
+          "conclusion": "success",
+          "isRunnerInternal": false
+        }
+      ]
+    }
+  ],
+  "baseline": {
+    "available": true,
+    "branch": "main",
+    "samples": [
+      {
+        "runId": 900001,
+        "runAttempt": 1,
+        "headSha": "ccccccccccccccccccccccccccccccccccccccc0",
+        "jobs": [
+          {
+            "id": 1,
+            "apiName": "Build",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:00:00.000Z",
+            "completedAt": "2026-08-14T00:00:38.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "npm ci",
+                "normalizedName": "npm ci",
+                "startedAt": "2026-08-14T00:00:00.000Z",
+                "completedAt": "2026-08-14T00:00:25.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "npm run build",
+                "normalizedName": "npm run build",
+                "startedAt": "2026-08-14T00:00:25.000Z",
+                "completedAt": "2026-08-14T00:00:38.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "apiName": "Unit test",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:00:38.000Z",
+            "completedAt": "2026-08-14T00:01:21.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "npm ci",
+                "normalizedName": "npm ci",
+                "startedAt": "2026-08-14T00:00:38.000Z",
+                "completedAt": "2026-08-14T00:01:03.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "npm test",
+                "normalizedName": "npm test",
+                "startedAt": "2026-08-14T00:01:03.000Z",
+                "completedAt": "2026-08-14T00:01:21.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "apiName": "Integration test",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:01:21.000Z",
+            "completedAt": "2026-08-14T00:02:34.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "npm ci",
+                "normalizedName": "npm ci",
+                "startedAt": "2026-08-14T00:01:21.000Z",
+                "completedAt": "2026-08-14T00:01:46.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "Run integration tests",
+                "normalizedName": "run integration tests",
+                "startedAt": "2026-08-14T00:01:46.000Z",
+                "completedAt": "2026-08-14T00:02:34.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "apiName": "Security (secrets)",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:00:00.000Z",
+            "completedAt": "2026-08-14T00:00:42.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Scan",
+                "normalizedName": "scan",
+                "startedAt": "2026-08-14T00:00:00.000Z",
+                "completedAt": "2026-08-14T00:00:42.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 5,
+            "apiName": "Security (dependencies)",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:00:00.000Z",
+            "completedAt": "2026-08-14T00:00:42.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Scan",
+                "normalizedName": "scan",
+                "startedAt": "2026-08-14T00:00:00.000Z",
+                "completedAt": "2026-08-14T00:00:42.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 6,
+            "apiName": "Security (sast)",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:00:00.000Z",
+            "completedAt": "2026-08-14T00:00:42.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Scan",
+                "normalizedName": "scan",
+                "startedAt": "2026-08-14T00:00:00.000Z",
+                "completedAt": "2026-08-14T00:00:42.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "runId": 900002,
+        "runAttempt": 1,
+        "headSha": "ccccccccccccccccccccccccccccccccccccccc1",
+        "jobs": [
+          {
+            "id": 1,
+            "apiName": "Build",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:00:00.000Z",
+            "completedAt": "2026-08-14T00:00:39.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "npm ci",
+                "normalizedName": "npm ci",
+                "startedAt": "2026-08-14T00:00:00.000Z",
+                "completedAt": "2026-08-14T00:00:26.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "npm run build",
+                "normalizedName": "npm run build",
+                "startedAt": "2026-08-14T00:00:26.000Z",
+                "completedAt": "2026-08-14T00:00:39.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "apiName": "Unit test",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:00:39.000Z",
+            "completedAt": "2026-08-14T00:01:23.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "npm ci",
+                "normalizedName": "npm ci",
+                "startedAt": "2026-08-14T00:00:39.000Z",
+                "completedAt": "2026-08-14T00:01:05.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "npm test",
+                "normalizedName": "npm test",
+                "startedAt": "2026-08-14T00:01:05.000Z",
+                "completedAt": "2026-08-14T00:01:23.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "apiName": "Integration test",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:01:23.000Z",
+            "completedAt": "2026-08-14T00:02:37.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "npm ci",
+                "normalizedName": "npm ci",
+                "startedAt": "2026-08-14T00:01:23.000Z",
+                "completedAt": "2026-08-14T00:01:49.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "Run integration tests",
+                "normalizedName": "run integration tests",
+                "startedAt": "2026-08-14T00:01:49.000Z",
+                "completedAt": "2026-08-14T00:02:37.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "apiName": "Security (secrets)",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:00:00.000Z",
+            "completedAt": "2026-08-14T00:00:43.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Scan",
+                "normalizedName": "scan",
+                "startedAt": "2026-08-14T00:00:00.000Z",
+                "completedAt": "2026-08-14T00:00:43.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 5,
+            "apiName": "Security (dependencies)",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:00:00.000Z",
+            "completedAt": "2026-08-14T00:00:43.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Scan",
+                "normalizedName": "scan",
+                "startedAt": "2026-08-14T00:00:00.000Z",
+                "completedAt": "2026-08-14T00:00:43.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 6,
+            "apiName": "Security (sast)",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:00:00.000Z",
+            "completedAt": "2026-08-14T00:00:43.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Scan",
+                "normalizedName": "scan",
+                "startedAt": "2026-08-14T00:00:00.000Z",
+                "completedAt": "2026-08-14T00:00:43.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "runId": 900003,
+        "runAttempt": 1,
+        "headSha": "ccccccccccccccccccccccccccccccccccccccc2",
+        "jobs": [
+          {
+            "id": 1,
+            "apiName": "Build",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:00:00.000Z",
+            "completedAt": "2026-08-14T00:00:37.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "npm ci",
+                "normalizedName": "npm ci",
+                "startedAt": "2026-08-14T00:00:00.000Z",
+                "completedAt": "2026-08-14T00:00:24.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "npm run build",
+                "normalizedName": "npm run build",
+                "startedAt": "2026-08-14T00:00:24.000Z",
+                "completedAt": "2026-08-14T00:00:37.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "apiName": "Unit test",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:00:37.000Z",
+            "completedAt": "2026-08-14T00:01:19.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "npm ci",
+                "normalizedName": "npm ci",
+                "startedAt": "2026-08-14T00:00:37.000Z",
+                "completedAt": "2026-08-14T00:01:01.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "npm test",
+                "normalizedName": "npm test",
+                "startedAt": "2026-08-14T00:01:01.000Z",
+                "completedAt": "2026-08-14T00:01:19.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "apiName": "Integration test",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:01:19.000Z",
+            "completedAt": "2026-08-14T00:02:31.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "npm ci",
+                "normalizedName": "npm ci",
+                "startedAt": "2026-08-14T00:01:19.000Z",
+                "completedAt": "2026-08-14T00:01:43.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "Run integration tests",
+                "normalizedName": "run integration tests",
+                "startedAt": "2026-08-14T00:01:43.000Z",
+                "completedAt": "2026-08-14T00:02:31.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "apiName": "Security (secrets)",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:00:00.000Z",
+            "completedAt": "2026-08-14T00:00:41.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Scan",
+                "normalizedName": "scan",
+                "startedAt": "2026-08-14T00:00:00.000Z",
+                "completedAt": "2026-08-14T00:00:41.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 5,
+            "apiName": "Security (dependencies)",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:00:00.000Z",
+            "completedAt": "2026-08-14T00:00:41.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Scan",
+                "normalizedName": "scan",
+                "startedAt": "2026-08-14T00:00:00.000Z",
+                "completedAt": "2026-08-14T00:00:41.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 6,
+            "apiName": "Security (sast)",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:00:00.000Z",
+            "completedAt": "2026-08-14T00:00:41.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Scan",
+                "normalizedName": "scan",
+                "startedAt": "2026-08-14T00:00:00.000Z",
+                "completedAt": "2026-08-14T00:00:41.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "runId": 900004,
+        "runAttempt": 1,
+        "headSha": "ccccccccccccccccccccccccccccccccccccccc3",
+        "jobs": [
+          {
+            "id": 1,
+            "apiName": "Build",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:00:00.000Z",
+            "completedAt": "2026-08-14T00:00:40.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "npm ci",
+                "normalizedName": "npm ci",
+                "startedAt": "2026-08-14T00:00:00.000Z",
+                "completedAt": "2026-08-14T00:00:27.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "npm run build",
+                "normalizedName": "npm run build",
+                "startedAt": "2026-08-14T00:00:27.000Z",
+                "completedAt": "2026-08-14T00:00:40.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "apiName": "Unit test",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:00:40.000Z",
+            "completedAt": "2026-08-14T00:01:25.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "npm ci",
+                "normalizedName": "npm ci",
+                "startedAt": "2026-08-14T00:00:40.000Z",
+                "completedAt": "2026-08-14T00:01:07.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "npm test",
+                "normalizedName": "npm test",
+                "startedAt": "2026-08-14T00:01:07.000Z",
+                "completedAt": "2026-08-14T00:01:25.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "apiName": "Integration test",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:01:25.000Z",
+            "completedAt": "2026-08-14T00:02:40.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "npm ci",
+                "normalizedName": "npm ci",
+                "startedAt": "2026-08-14T00:01:25.000Z",
+                "completedAt": "2026-08-14T00:01:52.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "Run integration tests",
+                "normalizedName": "run integration tests",
+                "startedAt": "2026-08-14T00:01:52.000Z",
+                "completedAt": "2026-08-14T00:02:40.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "apiName": "Security (secrets)",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:00:00.000Z",
+            "completedAt": "2026-08-14T00:00:44.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Scan",
+                "normalizedName": "scan",
+                "startedAt": "2026-08-14T00:00:00.000Z",
+                "completedAt": "2026-08-14T00:00:44.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 5,
+            "apiName": "Security (dependencies)",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:00:00.000Z",
+            "completedAt": "2026-08-14T00:00:44.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Scan",
+                "normalizedName": "scan",
+                "startedAt": "2026-08-14T00:00:00.000Z",
+                "completedAt": "2026-08-14T00:00:44.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 6,
+            "apiName": "Security (sast)",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-14T00:00:00.000Z",
+            "completedAt": "2026-08-14T00:00:44.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Scan",
+                "normalizedName": "scan",
+                "startedAt": "2026-08-14T00:00:00.000Z",
+                "completedAt": "2026-08-14T00:00:44.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

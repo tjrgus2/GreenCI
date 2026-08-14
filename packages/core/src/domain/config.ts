@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { PolicyMode, PolicyRule } from '../policy/index.js';
 import { canonicalHash } from '../util/canonical.js';
 import type { AnalysisWarning } from './schemas.js';
+import { describeUnknownKey } from './suggest.js';
 
 const TriangularConfigSchema = z
   .object({
@@ -87,10 +88,19 @@ const TestReportSchema = z
   })
   .strict();
 
+const WhatIfSchema = z
+  .object({
+    enabled: z.boolean().default(true),
+    'speedup-percent': z.number().min(1).max(95).default(50),
+    'max-scenarios': z.number().int().min(0).max(5).default(2),
+  })
+  .strict();
+
 const AnalysisSchema = z
   .object({
     'exclude-current-job': z.boolean().default(true),
     'critical-path': CriticalPathSchema.prefault({}),
+    'what-if': WhatIfSchema.prefault({}),
     'failure-logs': FailureLogsSchema.prefault({}),
     'test-reports': z.array(TestReportSchema).max(5).default([]),
   })
@@ -223,6 +233,11 @@ export interface ResolvedConfig {
       readonly enabled: boolean;
       readonly parseWorkflowDag: boolean;
     };
+    readonly whatIf: {
+      readonly enabled: boolean;
+      readonly speedupPercent: number;
+      readonly maxScenarios: number;
+    };
     readonly failureLogs: {
       readonly enabled: boolean;
       readonly maxBytesPerJob: number;
@@ -299,6 +314,11 @@ function toResolved(file: GreenCIConfigFile): ResolvedConfig {
         enabled: file.analysis['critical-path'].enabled,
         parseWorkflowDag: file.analysis['critical-path']['parse-workflow-dag'],
       },
+      whatIf: {
+        enabled: file.analysis['what-if'].enabled,
+        speedupPercent: file.analysis['what-if']['speedup-percent'],
+        maxScenarios: file.analysis['what-if']['max-scenarios'],
+      },
       failureLogs: {
         enabled: file.analysis['failure-logs'].enabled,
         maxBytesPerJob: file.analysis['failure-logs']['max-bytes-per-job'],
@@ -361,10 +381,16 @@ function applyOverrides(
   };
 }
 
-/** The bundled default configuration used when no file is present. */
-export const DEFAULT_CONFIG: ResolvedConfig = toResolved(
-  GreenCIConfigFileSchema.parse({}),
+/**
+ * The fully defaulted configuration document, in the file's own kebab-case
+ * shape. It doubles as the authoritative list of accepted keys.
+ */
+const DEFAULT_CONFIG_FILE: GreenCIConfigFile = GreenCIConfigFileSchema.parse(
+  {},
 );
+
+/** The bundled default configuration used when no file is present. */
+export const DEFAULT_CONFIG: ResolvedConfig = toResolved(DEFAULT_CONFIG_FILE);
 
 /** Result of resolving configuration, including non-fatal validation warnings. */
 export interface ConfigResolution {
@@ -378,9 +404,56 @@ function issueLocation(path: readonly PropertyKey[]): string {
 }
 
 /**
+ * Keys accepted at a path but absent from the fully defaulted document, because
+ * they are optional and have no default.
+ */
+const OPTIONAL_KEYS: Readonly<Record<string, readonly string[]>> = {
+  baseline: ['branch'],
+};
+
+/** Element shapes of the array-valued configuration sections. */
+const ARRAY_ELEMENT_KEYS: Readonly<Record<string, readonly string[]>> = {
+  'analysis.test-reports': [
+    'artifact',
+    'format',
+    'max-uncompressed-bytes',
+    'max-files',
+  ],
+  'policy.rules': ['metric', 'operator', 'value', 'mode', 'minimum-confidence'],
+};
+
+/**
+ * Every key the schema accepts at one path, derived from the schema itself by
+ * walking a fully defaulted document, so the suggestion list cannot drift from
+ * what is actually accepted.
+ */
+function acceptedKeysAt(path: readonly PropertyKey[]): string[] {
+  const objectPath = path.filter((segment) => typeof segment !== 'number');
+  const elementKeys = ARRAY_ELEMENT_KEYS[objectPath.map(String).join('.')];
+  if (path.some((segment) => typeof segment === 'number')) {
+    return [...(elementKeys ?? [])];
+  }
+
+  let cursor: unknown = DEFAULT_CONFIG_FILE;
+  for (const segment of objectPath) {
+    if (typeof cursor !== 'object' || cursor === null) {
+      return [];
+    }
+    cursor = (cursor as Record<string, unknown>)[String(segment)];
+  }
+  if (typeof cursor !== 'object' || cursor === null || Array.isArray(cursor)) {
+    return [];
+  }
+  return [
+    ...Object.keys(cursor),
+    ...(OPTIONAL_KEYS[objectPath.map(String).join('.')] ?? []),
+  ];
+}
+
+/**
  * Describe validation failures in a way a repository owner can act on. The
  * point of a strict configuration schema is to catch typos, so an unrecognized
- * key must name itself instead of reporting a generic invalid input.
+ * key names itself and, when one is plausible, the key that was probably meant.
  */
 function describeIssues(issues: readonly z.core.$ZodIssue[]): string {
   return issues
@@ -388,7 +461,10 @@ function describeIssues(issues: readonly z.core.$ZodIssue[]): string {
     .map((issue) => {
       const location = issueLocation(issue.path);
       if (issue.code === 'unrecognized_keys') {
-        return `${location}: unknown key(s) ${issue.keys.map((key) => `\`${key}\``).join(', ')}`;
+        const candidates = acceptedKeysAt(issue.path);
+        return `${location}: unknown key(s) ${issue.keys
+          .map((key) => describeUnknownKey(key, candidates))
+          .join(', ')}`;
       }
       return `${location}: ${issue.message}`;
     })
