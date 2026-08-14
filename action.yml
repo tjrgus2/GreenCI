@@ -1,5 +1,8 @@
 name: GreenCI
-description: Analyze GitHub Actions runtime and current-run CI efficiency
+description: >-
+  Detect CI performance regressions on every pull request. Reports wall-clock
+  and runner time against a robust baseline, the DAG critical path, runner cost,
+  uncertainty-aware carbon, and explainable recommendations.
 author: GreenCI Contributors
 
 branding:

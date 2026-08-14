@@ -100,7 +100,10 @@ function collectFrom(
   }
 }
 
-function purlOf(component: Component): string {
+function purlOf(component: {
+  readonly name: string;
+  readonly version: string;
+}): string {
   const [scope, unscoped] = component.name.startsWith('@')
     ? component.name.split('/')
     : [undefined, component.name];

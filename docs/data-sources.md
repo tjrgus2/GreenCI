@@ -76,6 +76,36 @@ range. Two limitations are recorded in the manifest and in every report:
    average with `regionResolved: false` and a lower data-quality grade. It never
    infers a data-centre location.
 
+## Supported carbon regions
+
+`carbon.region` accepts any `region` code in `data/carbon-intensity.json`.
+Today that is:
+
+| Code     | Region                             |
+| -------- | ---------------------------------- |
+| `GLOBAL` | Global average grid (the fallback) |
+| `KR`     | Republic of Korea                  |
+| `US`     | United States                      |
+| `EU`     | European Union                     |
+| `GB`     | United Kingdom                     |
+| `JP`     | Japan                              |
+
+An unrecognized code falls back to `GLOBAL`, sets `regionResolved: false`, lowers
+the data-quality grade, and emits `CARBON_REGION_UNKNOWN`. GreenCI never guesses
+a region from repository metadata, because GitHub does not publish where a job
+ran. Missing a region you need is a
+[dataset correction](https://github.com/tjrgus2/GreenCI/issues/new?template=dataset_update.yml),
+not a bug.
+
+## Supported runner classes
+
+`data/github-pricing.json` and `data/runner-models.json` cover `linux-x64`,
+`linux-arm64`, `windows-x64`, `macos-x64`, and `macos-arm64`. Anything else —
+including self-hosted runners and `windows-arm64` — is deliberately absent rather
+than approximated: those jobs still get full timing analysis, are excluded from
+the cost and carbon totals, and are named in `RUNNER_PRICE_UNKNOWN` and
+`RUNNER_MODEL_UNKNOWN`.
+
 ## Updating a dataset
 
 1. Edit the relevant `data/*.json` file, updating `version`, `effectiveDate`,
