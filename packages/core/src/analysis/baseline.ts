@@ -109,6 +109,13 @@ export interface BaselineComparisonInput {
   readonly available: boolean;
   readonly edges?: readonly WorkflowEdge[] | undefined;
   readonly derivedMetrics?: readonly DerivedMetric[] | undefined;
+  /**
+   * Logical job ids removed from the current run — normally the GreenCI
+   * analyzer itself. Historical runs contain a *completed* analyzer job, so it
+   * must be removed from them too or every baseline would look structurally
+   * different from the run being analyzed.
+   */
+  readonly excludedLogicalJobIds?: readonly string[] | undefined;
 }
 
 /** Stable comparison key for a job across runs. */
@@ -342,12 +349,20 @@ export function compareWithBaseline(
     return emptyComparison(input, currentShape, 'unavailable', [], 0, 0);
   }
 
+  const excludedLogicalJobIds = new Set(input.excludedLogicalJobIds ?? []);
   const evaluated = input.samples.map((rawSample) => {
     // Historical jobs arrive straight from the API adapter, so their durations
-    // must be recalculated exactly like the current run's before comparison.
+    // must be recalculated exactly like the current run's before comparison,
+    // and the analyzer job must be removed from them for the same reason it is
+    // removed from the current run.
     const sample: BaselineRunSample = {
       ...rawSample,
-      jobs: rawSample.jobs.map(withCalculatedDurations),
+      jobs: rawSample.jobs
+        .map(withCalculatedDurations)
+        .map(withLogicalIdentity)
+        .filter(
+          (job) => !excludedLogicalJobIds.has(job.logicalJobId ?? job.apiName),
+        ),
     };
     const shape = buildWorkflowShape({
       workflowPath: input.workflowPath,

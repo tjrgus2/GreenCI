@@ -197,6 +197,32 @@ describe('baseline comparison', () => {
     expect(listPrice?.baselineMedian).toBeCloseTo(0.016, 10);
   });
 
+  it('removes the analyzer job from historical runs as well', () => {
+    const samples: BaselineRunSample[] = [1, 2, 3, 4].map((runId) => ({
+      runId,
+      runAttempt: 1,
+      headSha: `sha-${runId}`,
+      jobs: [
+        job(1, 'Build', 100, [50]),
+        // Historical runs recorded a *completed* analyzer job.
+        job(2, 'GreenCI', 45, [40]),
+      ],
+    }));
+    const withoutExclusion = compareWithBaseline(input({ samples }));
+    expect(withoutExclusion.shapeSimilarity).toBeLessThan(1);
+
+    const result = compareWithBaseline(
+      input({ samples, excludedLogicalJobIds: ['greenci'] }),
+    );
+    expect(result.status).toBe('ready');
+    expect(result.shapeSimilarity).toBe(1);
+    expect(result.excludedForShape).toBe(0);
+    const runnerTime = result.metrics.find(
+      (metric) => metric.metric === 'runner-seconds',
+    );
+    expect(runnerTime?.baselineMedian).toBe(100);
+  });
+
   it('builds a stable comparison key from logical identity', () => {
     expect(jobComparisonKey(job(1, 'Test (20, ubuntu-latest)', 10))).toBe(
       'test|20, ubuntu-latest|linux-x64',

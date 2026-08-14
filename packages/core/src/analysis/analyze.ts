@@ -175,6 +175,10 @@ export function analyzeWorkflow(input: unknown): AnalysisReport {
         heuristic: false,
       };
   const jobs = exclusion.jobs;
+  const excludedJobIds = new Set(exclusion.excludedJobIds);
+  const excludedLogicalJobIds = jobsWithDurations
+    .filter((job) => excludedJobIds.has(job.id))
+    .map((job) => job.logicalJobId ?? job.apiName);
   const runtime = analyzeRuntime(jobs);
   const shape = buildWorkflowShape({
     workflowPath: validated.identity.workflowPath,
@@ -230,6 +234,7 @@ export function analyzeWorkflow(input: unknown): AnalysisReport {
     available: validated.baseline?.available ?? false,
     edges: validated.edges,
     derivedMetrics,
+    excludedLogicalJobIds,
   });
 
   const warnings = [
