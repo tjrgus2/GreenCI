@@ -74,12 +74,13 @@ function diagnostic(
       ? { column: location.column }
       : {}),
     confidence,
-    fingerprint: fingerprintOf([
-      parserId,
-      file,
-      line,
-      sanitizeLine(message, 120),
-    ]),
+    // Two findings from the same parser at the same location are the same
+    // problem, however the surrounding log text differs. Keying the
+    // fingerprint on the location prevents duplicate annotations on one line.
+    fingerprint:
+      file !== undefined && line !== undefined
+        ? fingerprintOf([parserId, file, line, location.column])
+        : fingerprintOf([parserId, sanitizeLine(message, 120)]),
   };
 }
 

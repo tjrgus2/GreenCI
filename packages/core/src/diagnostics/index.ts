@@ -4,7 +4,7 @@ import {
   type DiagnosticParser,
   type ParserContext,
 } from './parsers.js';
-import { sanitizeLine } from './sanitize.js';
+import { sanitizeLine, stripCommandEcho } from './sanitize.js';
 
 export {
   BUILT_IN_PARSERS,
@@ -18,6 +18,7 @@ export {
   redactSecrets,
   sanitizeLine,
   stripAnsi,
+  stripCommandEcho,
   stripControlCharacters,
   stripLogTimestamp,
 } from './sanitize.js';
@@ -63,10 +64,9 @@ export function parseFailureLog(
     : raw;
   const allLines = bounded.split(/\r?\n/u);
   const truncatedLines = allLines.length > limits.maxLines;
-  const text = allLines
-    .slice(-limits.maxLines)
-    .map((line) => sanitizeLine(line, 2000))
-    .join('\n');
+  const text = stripCommandEcho(
+    allLines.slice(-limits.maxLines).map((line) => sanitizeLine(line, 2000)),
+  ).join('\n');
 
   const scored = parsers
     .map((parser) => ({ parser, score: parser.canParse(text, context) }))
