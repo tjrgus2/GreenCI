@@ -115,7 +115,7 @@ protected release workflow. If you would rather not trust a moving tag, pin the
 commit — this is what GreenCI's own demo repository does:
 
 ```yaml
-- uses: tjrgus2/GreenCI@f073d91778055e55e75332c08e764b139cb70e4d # v1.0.0
+- uses: tjrgus2/GreenCI@d15bc009041ac36bf77ef1699938cdeb5938edb2 # v1.0.0
 ```
 
 **`if: always()`** matters: without it GreenCI is skipped exactly when a job

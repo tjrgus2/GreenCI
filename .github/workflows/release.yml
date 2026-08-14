@@ -79,9 +79,12 @@ jobs:
         run: |
           set -euo pipefail
           pnpm versions:verify
+          # A prerelease of 1.0.0 still ships GREENCI_VERSION 1.0.0, so compare
+          # the release core and ignore any -rc suffix on the tag.
+          core="${VERSION%%-*}"
           declared="$(node -e "import('@greenci/core').then(m => process.stdout.write(m.GREENCI_VERSION))")"
-          if [ "$declared" != "$VERSION" ]; then
-            echo "::error::Tag version $VERSION does not match GREENCI_VERSION $declared"
+          if [ "$declared" != "$core" ]; then
+            echo "::error::Tag version $core does not match GREENCI_VERSION $declared"
             exit 1
           fi
 

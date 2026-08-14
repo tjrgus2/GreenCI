@@ -105,7 +105,7 @@ jobs:
 갱신합니다. 움직이는 태그를 신뢰하고 싶지 않다면 커밋을 고정하세요.
 
 ```yaml
-- uses: tjrgus2/GreenCI@f073d91778055e55e75332c08e764b139cb70e4d # v1.0.0
+- uses: tjrgus2/GreenCI@d15bc009041ac36bf77ef1699938cdeb5938edb2 # v1.0.0
 ```
 
 **`if: always()`** 는 중요합니다. 이것이 없으면 Job이 실패했을 때 — 즉 리포트가 가장
