@@ -216,6 +216,28 @@ export interface ConfigResolution {
   readonly warnings: AnalysisWarning[];
 }
 
+function issueLocation(path: readonly PropertyKey[]): string {
+  return path.length === 0 ? '(root)' : path.map(String).join('.');
+}
+
+/**
+ * Describe validation failures in a way a repository owner can act on. The
+ * point of a strict configuration schema is to catch typos, so an unrecognized
+ * key must name itself instead of reporting a generic invalid input.
+ */
+function describeIssues(issues: readonly z.core.$ZodIssue[]): string {
+  return issues
+    .slice(0, 3)
+    .map((issue) => {
+      const location = issueLocation(issue.path);
+      if (issue.code === 'unrecognized_keys') {
+        return `${location}: unknown key(s) ${issue.keys.map((key) => `\`${key}\``).join(', ')}`;
+      }
+      return `${location}: ${issue.message}`;
+    })
+    .join('; ');
+}
+
 /**
  * Resolve configuration with the documented precedence: Action input beats the
  * repository configuration file, which beats the bundled defaults. Invalid
@@ -236,12 +258,7 @@ export function resolveConfig(
       warnings.push({
         code: 'CONFIG_INVALID',
         source: 'core',
-        message: `The repository GreenCI configuration was rejected and bundled defaults are used instead: ${parsed.error.issues
-          .slice(0, 3)
-          .map(
-            (issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`,
-          )
-          .join('; ')}`,
+        message: `The repository GreenCI configuration was rejected and bundled defaults are used instead: ${describeIssues(parsed.error.issues)}`,
       });
     }
   }
