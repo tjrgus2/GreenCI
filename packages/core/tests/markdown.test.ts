@@ -15,8 +15,8 @@ import {
 } from '../src/reporting/format.js';
 import { renderJobSummary } from '../src/reporting/markdown.js';
 import {
-  REPORT_MARKER,
   renderPullRequestComment,
+  reportMarker,
 } from '../src/reporting/pr-comment.js';
 
 const identity: AnalyzeWorkflowInput['identity'] = {
@@ -174,8 +174,36 @@ describe('Job Summary', () => {
 describe('pull-request comment', () => {
   it('starts with the hidden idempotency marker', () => {
     const markdown = renderPullRequestComment(report());
-    expect(markdown.startsWith(REPORT_MARKER)).toBe(true);
+    expect(markdown.startsWith(reportMarker('.github/workflows/ci.yml'))).toBe(
+      true,
+    );
     expect(markdown).toContain('🌱 GreenCI Report');
+  });
+
+  it('scopes the marker per workflow so two installations cannot collide', () => {
+    const other = renderPullRequestComment(
+      analyzeWorkflow({
+        identity: {
+          ...identity,
+          workflowPath: '.github/workflows/nightly.yml',
+        },
+        jobs: baselineJobs(120),
+        generatedAt: '2026-07-20T00:10:00.000Z',
+      }),
+    );
+    const ci = renderPullRequestComment(report());
+    expect(reportMarker('.github/workflows/ci.yml')).not.toBe(
+      reportMarker('.github/workflows/nightly.yml'),
+    );
+    expect(other).not.toContain(reportMarker('.github/workflows/ci.yml'));
+    expect(ci).not.toContain(reportMarker('.github/workflows/nightly.yml'));
+  });
+
+  it('neutralizes a hostile workflow path inside the marker', () => {
+    const marker = reportMarker('.github/workflows/a --> <script>.yml');
+    expect(marker.endsWith('-->')).toBe(true);
+    expect(marker).not.toContain('<script>');
+    expect(marker.match(/-->/gu)).toHaveLength(1);
   });
 
   it('shows an absent z-score rather than 0.00 when no robust scale exists', () => {

@@ -9,11 +9,14 @@ const request = {
   owner: 'owner',
   repository: 'repo',
   pullRequestNumber: 3,
-  body: '<!-- greenci-report:v1 -->\nnew report',
+  body: '<!-- greenci-report:v1 workflow=".github/workflows/ci.yml" -->\nnew report',
   updateExisting: true,
+  marker: '<!-- greenci-report:v1 workflow=".github/workflows/ci.yml" -->',
 };
 
-const marker = '<!-- greenci-report:v1 -->';
+const marker = '<!-- greenci-report:v1 workflow=".github/workflows/ci.yml" -->';
+const otherMarker =
+  '<!-- greenci-report:v1 workflow=".github/workflows/nightly.yml" -->';
 
 describe('pull-request comment publication', () => {
   it('creates a comment when none exists yet', async () => {
@@ -62,6 +65,33 @@ describe('pull-request comment publication', () => {
     );
     expect(result.action).toBe('updated');
     expect(updatedId).toBe(2);
+  });
+
+  it('never edits the comment owned by another GreenCI workflow', async () => {
+    let created = 0;
+    const result = await publishPullRequestComment(
+      fakeSource({
+        async listIssueComments() {
+          return [
+            {
+              id: 3,
+              body: `${otherMarker}\nreport from the nightly workflow`,
+              user: { login: DEFAULT_BOT_LOGIN, type: 'Bot' },
+            },
+          ];
+        },
+        async updateIssueComment() {
+          throw new Error("must not overwrite another workflow's comment");
+        },
+        async createIssueComment() {
+          created += 1;
+          return { id: 44 };
+        },
+      }),
+      request,
+    );
+    expect(result.action).toBe('created');
+    expect(created).toBe(1);
   });
 
   it('never edits a comment written by another account', async () => {

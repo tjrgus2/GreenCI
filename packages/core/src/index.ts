@@ -194,7 +194,8 @@ export {
 export { renderJobSummary } from './reporting/markdown.js';
 export {
   renderPullRequestComment,
-  REPORT_MARKER,
+  REPORT_MARKER_PREFIX,
+  reportMarker,
 } from './reporting/pr-comment.js';
 export { createTranslator, en, ko, locales } from './reporting/i18n/index.js';
 export type {

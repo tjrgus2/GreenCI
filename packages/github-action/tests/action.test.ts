@@ -266,7 +266,7 @@ describe('executeAction', () => {
                   },
                   {
                     id: 22,
-                    body: '<!-- greenci-report:v1 -->\nold report',
+                    body: '<!-- greenci-report:v1 workflow=".github/workflows/ci.yml" -->\nold report',
                     user: { login: 'github-actions[bot]', type: 'Bot' },
                   },
                 ];
@@ -289,7 +289,9 @@ describe('executeAction', () => {
     expect(report.baseline.status).toBe('ready');
     expect(report.baseline.sampleCount).toBe(5);
     expect(updated.id).toBe(22);
-    expect(updated.body).toContain('<!-- greenci-report:v1 -->');
+    expect(updated.body).toContain(
+      '<!-- greenci-report:v1 workflow=".github/workflows/ci.yml" -->',
+    );
     expect(created).toBe(0);
     expect(outputs.get('policy-conclusion')).toBe('skipped');
   });
