@@ -70,8 +70,8 @@ function renderBaselineSection(
       String(run.runId),
       String(run.runAttempt),
       formatRatio(run.shapeSimilarity),
-      run.exactShapeMatch ? 'exact' : 'similar',
-      run.included ? 'included' : 'excluded',
+      translate(run.exactShapeMatch ? 'shape.exact' : 'shape.similar'),
+      translate(run.included ? 'state.included' : 'state.excluded'),
       formatDuration(run.wallClockSeconds),
       formatDuration(run.runnerSeconds),
     ]);
@@ -95,16 +95,16 @@ function renderBaselineSection(
     `- ${translate('baseline.considered')}: ${baseline.consideredRuns}`,
     `- ${translate('baseline.included')}: ${baseline.sampleCount}`,
     `- ${translate('baseline.excludedShape')}: ${baseline.excludedForShape}`,
-    `- ${translate('label.shapeMatch')}: ${formatRatio(baseline.shapeSimilarity)} (threshold ${formatRatio(baseline.shapeThreshold)})`,
+    `- ${translate('label.shapeMatch')}: ${formatRatio(baseline.shapeSimilarity)} (${translate('label.threshold')} ${formatRatio(baseline.shapeThreshold)})`,
     `- ${translate('baseline.fingerprint')}: \`${baseline.currentFingerprint.slice(0, 24)}\``,
     '',
     ...renderTable(
       [
-        'run',
-        'attempt',
+        translate('label.run'),
+        translate('label.attempt'),
         translate('label.shapeMatch'),
-        'shape',
-        'state',
+        translate('label.shape'),
+        translate('label.state'),
         translate('metric.wallClock'),
         translate('metric.runnerTime'),
       ],
@@ -119,7 +119,7 @@ function renderBaselineSection(
         translate('table.current'),
         translate('table.change'),
         translate('label.zScore'),
-        'scale',
+        translate('label.scale'),
         translate('label.samples'),
         translate('label.verdict'),
         translate('label.confidence'),
@@ -150,7 +150,7 @@ function renderNodeComparisons(
   ]
     .slice(0, JOB_SUMMARY_ROW_LIMIT)
     .map((entry) => [
-      escapeMarkdown(entry.kind),
+      translate(entry.kind === 'job' ? 'label.job' : 'label.step'),
       `\`${escapeMarkdown(truncate(entry.label, 90))}\``,
       formatDuration(entry.baselineMedian),
       formatDuration(entry.current),
@@ -161,7 +161,7 @@ function renderNodeComparisons(
     ]);
   return renderTable(
     [
-      'kind',
+      translate('label.kind'),
       `${translate('label.job')} / ${translate('label.step')}`,
       translate('table.baseline'),
       translate('table.current'),
@@ -224,6 +224,30 @@ function renderCostSection(
   ];
 }
 
+type Carbon = NonNullable<AnalysisReport['carbon']>;
+
+/**
+ * Render one carbon assumption value.
+ *
+ * Every assumption value is a data token except `data-center-region`, which the
+ * estimator annotates in prose to say whether the region was configured or
+ * fell back. That annotation is rebuilt here from `region` and `regionResolved`
+ * so it can be translated, rather than shipped pre-composed in the report.
+ */
+function assumptionValue(
+  carbon: Carbon,
+  assumption: Carbon['assumptions'][number],
+  translate: Translator,
+): string {
+  if (assumption.key !== 'data-center-region') {
+    return escapeMarkdown(truncate(assumption.value, 160));
+  }
+  const annotation = translate(
+    carbon.regionResolved ? 'carbon.regionConfigured' : 'carbon.regionFallback',
+  );
+  return `${escapeMarkdown(carbon.region)} (${annotation})`;
+}
+
 function renderCarbonSection(
   report: AnalysisReport,
   translate: Translator,
@@ -260,10 +284,13 @@ function renderCarbonSection(
     '',
     ...carbon.assumptions.map(
       (assumption) =>
-        `- \`${escapeMarkdown(assumption.key)}\`: ${escapeMarkdown(truncate(assumption.value, 160))} — ${escapeMarkdown(truncate(assumption.source, 160))}`,
+        `- \`${escapeMarkdown(assumption.key)}\`: ${assumptionValue(carbon, assumption, translate)} — ${translate.optional(
+          `source.${assumption.source}`,
+          escapeMarkdown(truncate(assumption.source, 160)),
+        )}`,
     ),
     '',
-    `_${escapeMarkdown(carbon.measurementDisclaimer)}_`,
+    `_${translate('carbon.measurementDisclaimer')}_`,
   ];
 }
 
@@ -273,7 +300,7 @@ export function renderJobSummary(report: AnalysisReport): string {
   return [
     `# ${translate('report.title')}`,
     '',
-    `Run \`${report.identity.runId}\` (attempt ${report.identity.runAttempt}) · \`${escapeMarkdown(truncate(report.identity.workflowPath, 120))}\``,
+    `${translate('label.run')} \`${report.identity.runId}\` (${translate('label.attempt')} ${report.identity.runAttempt}) · \`${escapeMarkdown(truncate(report.identity.workflowPath, 120))}\``,
     '',
     `> ${renderHeadline(report, translate)}`,
     '',
@@ -371,7 +398,7 @@ export function renderJobSummary(report: AnalysisReport): string {
     '',
     `## ${translate('section.warnings')}`,
     '',
-    `Analyzer exclusion: ${escapeMarkdown(report.analyzerExclusion.method)}${report.analyzerExclusion.heuristic ? ' (heuristic)' : ''}`,
+    `${translate('label.analyzerExclusion')}: ${escapeMarkdown(report.analyzerExclusion.method)}${report.analyzerExclusion.heuristic ? ` (${translate('label.heuristic')})` : ''}`,
     '',
     ...renderWarnings(report, translate),
     '',

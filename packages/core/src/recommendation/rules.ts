@@ -3,6 +3,7 @@ import type { NormalizedJob } from '../domain/schemas.js';
 import type {
   AnalysisContext,
   EstimatedImpact,
+  Evidence,
   RecommendationRule,
 } from './types.js';
 
@@ -364,14 +365,14 @@ const statisticalRegression: RecommendationRule = {
         },
         ...(node === undefined
           ? []
-          : [
+          : ([
               {
                 metric: 'largest-regressed-node',
                 observed: node.label,
                 baseline: Math.round(node.baselineMedian),
                 source: 'GreenCI per-node comparison',
               },
-            ]),
+            ] satisfies Evidence[])),
       ],
     };
   },

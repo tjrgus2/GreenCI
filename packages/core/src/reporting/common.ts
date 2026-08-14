@@ -275,10 +275,10 @@ export function renderEstimationDetails(
   translate: Translator,
 ): string[] {
   const lines: string[] = [
-    `- Runtime source: GitHub Actions API`,
-    `- GreenCI version: \`${escapeMarkdown(report.greenciVersion)}\``,
-    `- Report schema: \`${escapeMarkdown(report.schemaVersion)}\``,
-    `- Config hash: \`${report.configHash.slice(0, 16)}\``,
+    `- ${translate('details.runtimeSource')}: ${translate('details.runtimeSourceValue')}`,
+    `- ${translate('details.version')}: \`${escapeMarkdown(report.greenciVersion)}\``,
+    `- ${translate('details.schema')}: \`${escapeMarkdown(report.schemaVersion)}\``,
+    `- ${translate('details.configHash')}: \`${report.configHash.slice(0, 16)}\``,
     `- ${translate('baseline.fingerprint')}: \`${report.baseline.currentFingerprint.slice(0, 16)}\``,
   ];
 
@@ -316,7 +316,7 @@ export function renderEstimationDetails(
     lines.push(
       `- ${translate('carbon.model')}: \`${escapeMarkdown(carbon.modelVersion)}\``,
       `- ${translate('carbon.interval')}: ${formatGrams(carbon.operationalCarbonGrams.p05)} – ${formatGrams(carbon.operationalCarbonGrams.p95)}`,
-      `- ${translate('carbon.region')}: ${escapeMarkdown(carbon.region)}${carbon.regionResolved ? '' : ' (fallback)'}`,
+      `- ${translate('carbon.region')}: ${escapeMarkdown(carbon.region)}${carbon.regionResolved ? '' : ` (${translate('carbon.regionFallbackShort')})`}`,
       `- ${translate('carbon.samples')}: ${carbon.simulationSamples}`,
       `- ${translate('carbon.seed')}: \`${carbon.seedHash.slice(0, 16)}\``,
       `- ${translate('label.dataQuality')}: ${translateConfidence(translate, carbon.quality.grade)} (${formatNumber(carbon.quality.score, 3)})`,
@@ -330,7 +330,7 @@ export function renderEstimationDetails(
         })}`,
       );
     }
-    lines.push(`- ${escapeMarkdown(carbon.measurementDisclaimer)}`);
+    lines.push(`- ${translate('carbon.measurementDisclaimer')}`);
   }
 
   lines.push(`- ${translate('section.dataSources')}:`);
@@ -344,7 +344,55 @@ export function renderEstimationDetails(
   return lines;
 }
 
-/** Render the shared warning list. */
+/**
+ * Values a localized warning template needs.
+ *
+ * The analyzer writes each warning as a finished English sentence, so the
+ * specifics are not carried separately on the warning. Every one of them is
+ * already present elsewhere in the report, which is what makes render-time
+ * translation possible without widening the report schema.
+ */
+function warningParameters(
+  report: AnalysisReport,
+  translate: Translator,
+  code: string,
+): Readonly<Record<string, string | number>> | undefined {
+  switch (code) {
+    case 'BASELINE_INSUFFICIENT_SAMPLES':
+      return {
+        samples: report.baseline.sampleCount,
+        minimum: report.baseline.minimumSamples,
+      };
+    case 'WORKFLOW_SHAPE_CHANGED':
+      return { excluded: report.baseline.excludedForShape };
+    case 'RUNNER_PRICE_UNKNOWN':
+      return { classes: (report.cost?.unknownRunnerClasses ?? []).join(', ') };
+    case 'RUNNER_MODEL_UNKNOWN':
+      return {
+        classes: (report.carbon?.unknownRunnerClasses ?? []).join(', '),
+      };
+    case 'CARBON_REGION_UNKNOWN':
+      return { region: report.carbon?.region ?? '—' };
+    case 'CRITICAL_PATH_DEGRADED':
+      return {
+        confidence: translateConfidence(
+          translate,
+          report.criticalPath.confidence,
+        ),
+        reasons: report.criticalPath.reasons.join(', '),
+      };
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Render the shared warning list.
+ *
+ * Warnings the core raises are translated from their code. Warnings forwarded
+ * from an adapter can quote an upstream GitHub or parser error, which GreenCI
+ * does not paraphrase, so those fall back to the analyzer's English text.
+ */
 export function renderWarnings(
   report: AnalysisReport,
   translate: Translator,
@@ -352,8 +400,12 @@ export function renderWarnings(
   if (report.warnings.length === 0) {
     return [`- ${translate('warnings.none')}`];
   }
-  return report.warnings.map(
-    (warning) =>
-      `- \`${warning.code}\` ${escapeMarkdown(truncate(warning.message, 400))} (${warning.source})`,
-  );
+  return report.warnings.map((warning) => {
+    const message = translate.optional(
+      `warning.${warning.code}`,
+      escapeMarkdown(truncate(warning.message, 400)),
+      warningParameters(report, translate, warning.code),
+    );
+    return `- \`${warning.code}\` ${message} (${warning.source})`;
+  });
 }

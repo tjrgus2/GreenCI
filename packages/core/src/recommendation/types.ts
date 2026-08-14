@@ -6,12 +6,40 @@ import type { NormalizedJob } from '../domain/schemas.js';
 import type { CarbonEstimate } from '../estimation/carbon.js';
 import type { CostEstimate } from '../estimation/cost.js';
 
+/**
+ * Where an observation came from.
+ *
+ * A closed set, because the report stores this text in English and rendering
+ * translates it back by exactly this key. An ad-hoc string would render
+ * untranslated in a non-English report, so the compiler forbids one.
+ */
+export const EVIDENCE_SOURCES = [
+  'GitHub Actions step timing',
+  'GitHub Actions step names',
+  'Normalized GitHub Actions step names',
+  'GitHub Actions job names',
+  'GitHub job names',
+  'GitHub Actions job conclusions',
+  'GitHub Actions job timestamps',
+  'GitHub Actions run history',
+  'GreenCI runtime analysis',
+  'GreenCI critical-path analysis',
+  'GreenCI baseline comparison',
+  'GreenCI robust statistics',
+  'GreenCI per-node comparison',
+  'Workflow needs graph',
+  'Interval overlap fallback',
+] as const;
+
+/** One of the recognized evidence provenance labels. */
+export type EvidenceSource = (typeof EVIDENCE_SOURCES)[number];
+
 /** One observation that supports a recommendation. */
 export interface Evidence {
   readonly metric: string;
   readonly observed: number | string;
   readonly baseline?: number | string;
-  readonly source: string;
+  readonly source: EvidenceSource;
 }
 
 /** An upper-bound estimate of what acting on a recommendation could save. */

@@ -97,7 +97,7 @@ export function renderPullRequestComment(
       version: report.greenciVersion,
       schema: report.schemaVersion,
       locale: report.locale,
-    })} · run <code>${report.identity.runId}</code> · <code>${escapeMarkdown(
+    })} · ${translate('label.run')} <code>${report.identity.runId}</code> · <code>${escapeMarkdown(
       truncate(report.identity.workflowPath, 120),
     )}</code></sub>`,
     '',

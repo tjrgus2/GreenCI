@@ -180,6 +180,114 @@ export const en = {
     'GreenCI {version} · report schema {schema} · locale {locale}',
   'footer.notMeasured':
     'Carbon values are modeled operational emissions, not direct measurements.',
+
+  'label.analyzerExclusion': 'Analyzer exclusion',
+  'label.heuristic': 'heuristic',
+  'label.run': 'run',
+  'label.attempt': 'attempt',
+  'label.shape': 'shape',
+  'label.state': 'state',
+  'label.scale': 'scale',
+  'label.kind': 'kind',
+  'label.threshold': 'threshold',
+  'label.suite': 'suite',
+  'label.message': 'message',
+  'label.parser': 'parser',
+  'label.severity': 'severity',
+  'label.location': 'location',
+  'shape.exact': 'exact',
+  'shape.similar': 'similar',
+  'state.included': 'included',
+  'state.excluded': 'excluded',
+  'details.runtimeSource': 'Runtime source',
+  'details.runtimeSourceValue': 'GitHub Actions API',
+  'details.version': 'GreenCI version',
+  'details.schema': 'Report schema',
+  'details.configHash': 'Config hash',
+
+  // Prose the analyzer writes into the report in English. The report stays
+  // locale-independent, so these are translated again at render time, keyed on
+  // the stable rule id rather than on the English text.
+  'rule.GCI-CACHE-001.title': 'Dependency installation dominates runner time',
+  'rule.GCI-CACHE-001.explanation':
+    'Dependency installation steps consume a large share of total runner time. A lockfile-aware dependency cache, or reusing a prepared dependency artifact, usually removes most of it.',
+  'rule.GCI-DUP-001.title': 'The same step runs in several jobs',
+  'rule.GCI-DUP-001.explanation':
+    'An equivalent step executes in more than one job. Building or preparing once and sharing the result through an artifact, or extracting a reusable workflow, removes the duplicated runner time.',
+  'rule.GCI-MATRIX-001.title': 'A matrix fan-out dominates runner consumption',
+  'rule.GCI-MATRIX-001.explanation':
+    'One matrix job expands into many variants that together consume most of the run. Consider a reduced matrix on pull requests and the full matrix on the default branch or a schedule.',
+  'rule.GCI-ORDER-001.title': 'The pipeline failed late',
+  'rule.GCI-ORDER-001.explanation':
+    'The first failure landed well into the run, so contributors waited before learning the pipeline was broken. Running the fastest checks first, or gating slow jobs behind them, shortens that feedback loop.',
+  'rule.GCI-CRITICAL-001.title': 'One job dominates the critical path',
+  'rule.GCI-CRITICAL-001.explanation':
+    'A single job accounts for most of the time developers wait for this workflow. Splitting or parallelizing it changes merge latency, while optimizing a non-critical job would not.',
+  'rule.GCI-REGRESSION-001.title':
+    'A statistically significant CI regression was detected',
+  'rule.GCI-REGRESSION-001.explanation':
+    'The current run is slower than the robust median of comparable historical runs by more than the configured threshold. The listed node is the largest contributor and is the place to look first.',
+  'rule.GCI-FLAKY-001.title': 'Workflow runtime is unstable across runs',
+  'rule.GCI-FLAKY-001.explanation':
+    'The historical runtime of this workflow varies widely, which makes regressions harder to detect and merge times unpredictable. Unstable caches, network-dependent steps, or flaky tests are the usual causes.',
+  'rule.GCI-QUEUE-001.title': 'Runner queue time dominates the wait',
+  'rule.GCI-QUEUE-001.explanation':
+    'Jobs spent a large part of the wall-clock window waiting for a runner rather than executing. This is a scheduling and capacity question, not a code optimization opportunity.',
+
+  // Evidence and assumption provenance, keyed on the English text the rule
+  // emitted so that the machine-readable report needs no extra field.
+  'source.GitHub Actions step timing': 'GitHub Actions step timing',
+  'source.GitHub Actions step names': 'GitHub Actions step names',
+  'source.Normalized GitHub Actions step names':
+    'Normalized GitHub Actions step names',
+  'source.GitHub Actions job names': 'GitHub Actions job names',
+  'source.GitHub job names': 'GitHub job names',
+  'source.GitHub Actions job conclusions': 'GitHub Actions job conclusions',
+  'source.GitHub Actions job timestamps': 'GitHub Actions job timestamps',
+  'source.GitHub Actions run history': 'GitHub Actions run history',
+  'source.GreenCI runtime analysis': 'GreenCI runtime analysis',
+  'source.GreenCI critical-path analysis': 'GreenCI critical-path analysis',
+  'source.GreenCI baseline comparison': 'GreenCI baseline comparison',
+  'source.GreenCI robust statistics': 'GreenCI robust statistics',
+  'source.GreenCI per-node comparison': 'GreenCI per-node comparison',
+  'source.GreenCI configuration': 'GreenCI configuration',
+  'source.Workflow needs graph': 'Workflow needs graph',
+  'source.Interval overlap fallback': 'Interval overlap fallback',
+
+  'whatIf.disclaimer':
+    'Counterfactual estimates recomputed from GreenCI models over hypothetically shortened jobs. They are not measured savings and not a guarantee that the change is achievable.',
+  'carbon.measurementDisclaimer':
+    'Modeled operational emissions. GreenCI does not measure electricity on GitHub-hosted runners and does not claim certified SCI compliance.',
+  'carbon.regionConfigured': 'configured',
+  'carbon.regionFallback':
+    'fallback; GitHub does not publish the execution region',
+  'carbon.regionFallbackShort': 'fallback',
+
+  // Degraded-mode warnings raised by the core analyzer.
+  'warning.ANALYZER_EXCLUSION_HEURISTIC':
+    'The current analyzer job was excluded heuristically because its API name did not match GITHUB_JOB.',
+  'warning.ANALYZER_NOT_IDENTIFIED':
+    'The current analyzer job could not be identified; incomplete jobs do not contribute duration metrics.',
+  'warning.JOB_TIMESTAMPS_INCOMPLETE':
+    'One or more jobs had incomplete timestamps and were excluded from runner-time totals.',
+  'warning.STEP_TIMESTAMPS_INCOMPLETE':
+    'One or more steps had incomplete timestamps and show an unavailable duration.',
+  'warning.BASELINE_UNAVAILABLE':
+    'No comparable historical run was available; GreenCI reports the current run without regression claims.',
+  'warning.BASELINE_INSUFFICIENT_SAMPLES':
+    'Only {samples} comparable baseline runs were available; {minimum} are required before a regression is claimed. Merge more runs to the baseline branch, or lower `baseline.minimum-samples` in .greenci.yml.',
+  'warning.WORKFLOW_SHAPE_CHANGED':
+    '{excluded} historical run(s) were excluded because the workflow structure differed by more than the configured shape threshold.',
+  'warning.RUNNER_PRICE_UNKNOWN':
+    'No price is applied to unknown runner classes: {classes}. Those jobs are excluded from the cost total; report the runner label so the pricing dataset can cover it.',
+  'warning.RUNNER_MODEL_UNKNOWN':
+    'No power model is applied to unknown runner classes: {classes}. Those jobs are excluded from the carbon total; report the runner label so the power dataset can cover it.',
+  'warning.CARBON_REGION_UNKNOWN':
+    'The configured carbon region is not in the bundled dataset, so GreenCI used {region} and lowered the data-quality score. See docs/data-sources.md for the regions `carbon.region` accepts.',
+  'warning.WORKFLOW_DAG_UNAVAILABLE':
+    'The workflow definition could not be used to rebuild the needs graph; criticality is an interval-overlap estimate and is not an exact DAG critical path.',
+  'warning.CRITICAL_PATH_DEGRADED':
+    'The critical path was reconstructed with {confidence} confidence ({reasons}).',
 } as const;
 
 /** Every translatable message key. */

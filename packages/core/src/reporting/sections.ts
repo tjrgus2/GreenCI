@@ -185,7 +185,7 @@ export function renderWhatIfSection(
       lines.push(`_${translate('whatIf.runnerOnly')}_`, '');
     }
   }
-  lines.push(`_${escapeMarkdown(whatIf.disclaimer)}_`);
+  lines.push(`_${translate('whatIf.disclaimer')}_`);
   return lines;
 }
 
@@ -304,18 +304,32 @@ export function renderRecommendationsSection(
   }
   const lines: string[] = [`## ${translate('section.recommendations')}`, ''];
   for (const recommendation of recommendations) {
+    // A rule's prose is stored in the report in English and translated here from
+    // its stable id, so a custom rule still renders through the fallback.
+    const title = translate.optional(
+      `rule.${recommendation.ruleId}.title`,
+      escapeMarkdown(recommendation.title),
+    );
+    const explanation = translate.optional(
+      `rule.${recommendation.ruleId}.explanation`,
+      escapeMarkdown(recommendation.explanation),
+    );
     lines.push(
-      `- ${SEVERITY_ICON[recommendation.severity]} \`${escapeMarkdown(recommendation.ruleId)}\` **${escapeMarkdown(recommendation.title)}** (${translate('label.confidence')} ${formatNumber(recommendation.confidence, 2)})`,
-      `  - ${escapeMarkdown(recommendation.explanation)}`,
+      `- ${SEVERITY_ICON[recommendation.severity]} \`${escapeMarkdown(recommendation.ruleId)}\` **${title}** (${translate('label.confidence')} ${formatNumber(recommendation.confidence, 2)})`,
+      `  - ${explanation}`,
     );
     if (options.withEvidence) {
       for (const evidence of recommendation.evidence) {
+        const source = translate.optional(
+          `source.${evidence.source}`,
+          escapeMarkdown(truncate(evidence.source, 80)),
+        );
         lines.push(
           `  - ${translate('recommendation.evidence')} \`${escapeMarkdown(evidence.metric)}\`: ${escapeMarkdown(truncate(String(evidence.observed), 120))}${
             evidence.baseline === undefined
               ? ''
               : ` (${translate('table.baseline')}: ${escapeMarkdown(truncate(String(evidence.baseline), 60))})`
-          } — ${escapeMarkdown(truncate(evidence.source, 80))}`,
+          } — ${source}`,
         );
       }
     }
@@ -414,7 +428,11 @@ export function renderTestsSection(
     `### ${translate('tests.slowestCases')}`,
     '',
     ...renderTable(
-      ['suite', translate('label.step'), translate('label.duration')],
+      [
+        translate('label.suite'),
+        translate('label.step'),
+        translate('label.duration'),
+      ],
       ['left', 'left', 'right'],
       tests.slowestCases.map((testCase) => [
         escapeMarkdown(truncate(testCase.suite, 60)),
@@ -426,7 +444,11 @@ export function renderTestsSection(
     `### ${translate('tests.failedCases')}`,
     '',
     ...renderTable(
-      ['suite', translate('label.step'), 'message'],
+      [
+        translate('label.suite'),
+        translate('label.step'),
+        translate('label.message'),
+      ],
       ['left', 'left', 'left'],
       tests.failedCases.map((testCase) => [
         escapeMarkdown(truncate(testCase.suite, 60)),
@@ -476,10 +498,10 @@ export function renderDiagnosticsSection(
     ...renderTable(
       [
         translate('label.job'),
-        'parser',
-        'severity',
-        'location',
-        'message',
+        translate('label.parser'),
+        translate('label.severity'),
+        translate('label.location'),
+        translate('label.message'),
         translate('label.confidence'),
       ],
       ['left', 'left', 'left', 'left', 'left', 'right'],

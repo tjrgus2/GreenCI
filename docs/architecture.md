@@ -69,6 +69,32 @@ invalid `.greenci.yml`, unavailable history, structurally incompatible history,
 unknown runner class, unknown carbon region, denied pull-request comment
 permission, failed Job Summary, and failed artifact upload.
 
+## Localization
+
+The JSON report is locale-independent. Every string the analyzer writes into it
+is English, including rule titles, evidence provenance, disclaimers, and warning
+messages, so tooling and the published schema never depend on a display setting.
+
+Translation happens when a surface is rendered, keyed on a stable identifier
+rather than on the English text: `rule.<rule-id>.title`, `warning.<code>`,
+`source.<provenance label>`. Values a localized warning needs — a sample count,
+an unknown runner class, a critical-path confidence grade — are recovered from
+the report at render time, which is why no `params` field was added to the
+warning contract.
+
+Three things keep a locale from silently falling back to English:
+
+- `Messages` is `Record<MessageKey, string>`, so a locale missing any key fails
+  to compile, and a test asserts placeholder sets match across locales;
+- `EVIDENCE_SOURCES` and `CORE_WARNING_CODES` are closed sets, so a new
+  provenance label or warning code cannot be introduced without a translation;
+- `localization.test.ts` renders a Korean report and asserts that none of the
+  English prose stored in that same report survives into the output.
+
+An unrecognized key still falls back rather than throwing, because a custom rule
+or a quoted upstream GitHub error has no translation to find. Warnings forwarded
+from an adapter can embed such an error, and GreenCI does not paraphrase it.
+
 ## Generated artifacts
 
 Two committed outputs are generated and verified in the same way the Action

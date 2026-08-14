@@ -9,6 +9,22 @@ The published report has its own schema version, recorded in every report as
 
 ## [Unreleased]
 
+### Fixed
+
+- A Korean report rendered its most valuable content in English. Section
+  headings and labels were translated, but the recommendation titles and
+  explanations, the evidence provenance labels, the counterfactual and carbon
+  disclaimers, and the degraded-mode warnings were fixed English strings
+  produced during analysis, so translation never reached them. All of it is now
+  translated at render time from a stable key — the rule id, the warning code,
+  or the provenance label — leaving the JSON artifact locale-independent as
+  designed.
+
+  The evidence provenance labels and the core warning codes are now closed sets,
+  so the compiler refuses a value that has no translation, and
+  `localization.test.ts` asserts that no English analyzer prose survives in a
+  Korean render.
+
 ## [1.0.0] — 2026-08-14
 
 First public release. GreenCI installs as one GitHub Action job and reports how a
@@ -87,7 +103,9 @@ pull request changed CI wait time, runner consumption, cost, and modeled carbon.
 - Full Job Summary, available even without comment permission.
 - Versioned `greenci-report.json` artifact, schema 1.3.0.
 - Eight Action outputs.
-- English and Korean rendering, with compile-time key completeness.
+- English and Korean rendering of every rendered surface — labels, rule prose,
+  evidence provenance, disclaimers, and degraded-mode warnings — with
+  compile-time key completeness across locales.
 - Offline fixture replay CLI and a one-command before/after demonstration.
 
 ### Security

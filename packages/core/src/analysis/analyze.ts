@@ -70,6 +70,34 @@ function carbonFor(
   });
 }
 
+/**
+ * Every degraded-mode code the core analyzer can raise.
+ *
+ * The list is closed so that each code can be given a `warning.<code>` message
+ * in every report locale. `RECOMMENDATION_RULE_FAILED` is deliberately the one
+ * code with no localized template: its message names the rules that crashed,
+ * and those identifiers appear nowhere else in the report, so rendering falls
+ * back to the analyzer's English text rather than dropping them.
+ */
+export const CORE_WARNING_CODES = [
+  'ANALYZER_EXCLUSION_HEURISTIC',
+  'ANALYZER_NOT_IDENTIFIED',
+  'JOB_TIMESTAMPS_INCOMPLETE',
+  'STEP_TIMESTAMPS_INCOMPLETE',
+  'BASELINE_UNAVAILABLE',
+  'BASELINE_INSUFFICIENT_SAMPLES',
+  'WORKFLOW_SHAPE_CHANGED',
+  'RUNNER_PRICE_UNKNOWN',
+  'RUNNER_MODEL_UNKNOWN',
+  'CARBON_REGION_UNKNOWN',
+  'WORKFLOW_DAG_UNAVAILABLE',
+  'CRITICAL_PATH_DEGRADED',
+  'RECOMMENDATION_RULE_FAILED',
+] as const;
+
+/** One code the core analyzer can raise. */
+export type CoreWarningCode = (typeof CORE_WARNING_CODES)[number];
+
 function collectWarnings(
   exclusion: AnalyzerExclusion,
   baseline: BaselineComparison,
@@ -79,113 +107,97 @@ function collectWarnings(
   failedRuleIds: readonly string[],
 ): AnalysisWarning[] {
   const warnings: AnalysisWarning[] = [];
+  const warn = (code: CoreWarningCode, message: string): void => {
+    warnings.push({ code, source: 'core', message });
+  };
 
   if (exclusion.heuristic) {
-    warnings.push({
-      code: 'ANALYZER_EXCLUSION_HEURISTIC',
-      source: 'core',
-      message:
-        'The current analyzer job was excluded heuristically because its API name did not match GITHUB_JOB.',
-    });
+    warn(
+      'ANALYZER_EXCLUSION_HEURISTIC',
+      'The current analyzer job was excluded heuristically because its API name did not match GITHUB_JOB.',
+    );
   }
   if (exclusion.excludedJobIds.length === 0) {
-    warnings.push({
-      code: 'ANALYZER_NOT_IDENTIFIED',
-      source: 'core',
-      message:
-        'The current analyzer job could not be identified; incomplete jobs do not contribute duration metrics.',
-    });
+    warn(
+      'ANALYZER_NOT_IDENTIFIED',
+      'The current analyzer job could not be identified; incomplete jobs do not contribute duration metrics.',
+    );
   }
   if (exclusion.jobs.some((job) => job.durationSeconds === undefined)) {
-    warnings.push({
-      code: 'JOB_TIMESTAMPS_INCOMPLETE',
-      source: 'core',
-      message:
-        'One or more jobs had incomplete timestamps and were excluded from runner-time totals.',
-    });
+    warn(
+      'JOB_TIMESTAMPS_INCOMPLETE',
+      'One or more jobs had incomplete timestamps and were excluded from runner-time totals.',
+    );
   }
   if (
     exclusion.jobs.some((job) =>
       job.steps.some((step) => step.durationSeconds === undefined),
     )
   ) {
-    warnings.push({
-      code: 'STEP_TIMESTAMPS_INCOMPLETE',
-      source: 'core',
-      message:
-        'One or more steps had incomplete timestamps and show an unavailable duration.',
-    });
+    warn(
+      'STEP_TIMESTAMPS_INCOMPLETE',
+      'One or more steps had incomplete timestamps and show an unavailable duration.',
+    );
   }
 
   if (baseline.status === 'unavailable') {
-    warnings.push({
-      code: 'BASELINE_UNAVAILABLE',
-      source: 'core',
-      message:
-        'No comparable historical run was available; GreenCI reports the current run without regression claims.',
-    });
+    warn(
+      'BASELINE_UNAVAILABLE',
+      'No comparable historical run was available; GreenCI reports the current run without regression claims.',
+    );
   }
   if (baseline.status === 'insufficient-samples') {
-    warnings.push({
-      code: 'BASELINE_INSUFFICIENT_SAMPLES',
-      source: 'core',
-      message: `Only ${baseline.sampleCount} comparable baseline runs were available; ${baseline.minimumSamples} are required before a regression is claimed. Merge more runs to the baseline branch, or lower \`baseline.minimum-samples\` in .greenci.yml.`,
-    });
+    warn(
+      'BASELINE_INSUFFICIENT_SAMPLES',
+      `Only ${baseline.sampleCount} comparable baseline runs were available; ${baseline.minimumSamples} are required before a regression is claimed. Merge more runs to the baseline branch, or lower \`baseline.minimum-samples\` in .greenci.yml.`,
+    );
   }
   if (baseline.status === 'shape-changed' || baseline.excludedForShape > 0) {
-    warnings.push({
-      code: 'WORKFLOW_SHAPE_CHANGED',
-      source: 'core',
-      message: `${baseline.excludedForShape} historical run(s) were excluded because the workflow structure differed by more than the configured shape threshold.`,
-    });
+    warn(
+      'WORKFLOW_SHAPE_CHANGED',
+      `${baseline.excludedForShape} historical run(s) were excluded because the workflow structure differed by more than the configured shape threshold.`,
+    );
   }
 
   if (cost !== undefined && cost.unknownRunnerClasses.length > 0) {
-    warnings.push({
-      code: 'RUNNER_PRICE_UNKNOWN',
-      source: 'core',
-      message: `No price is applied to unknown runner classes: ${cost.unknownRunnerClasses.join(', ')}. Those jobs are excluded from the cost total; report the runner label so the pricing dataset can cover it.`,
-    });
+    warn(
+      'RUNNER_PRICE_UNKNOWN',
+      `No price is applied to unknown runner classes: ${cost.unknownRunnerClasses.join(', ')}. Those jobs are excluded from the cost total; report the runner label so the pricing dataset can cover it.`,
+    );
   }
   if (carbon !== undefined && carbon.unknownRunnerClasses.length > 0) {
-    warnings.push({
-      code: 'RUNNER_MODEL_UNKNOWN',
-      source: 'core',
-      message: `No power model is applied to unknown runner classes: ${carbon.unknownRunnerClasses.join(', ')}. Those jobs are excluded from the carbon total; report the runner label so the power dataset can cover it.`,
-    });
+    warn(
+      'RUNNER_MODEL_UNKNOWN',
+      `No power model is applied to unknown runner classes: ${carbon.unknownRunnerClasses.join(', ')}. Those jobs are excluded from the carbon total; report the runner label so the power dataset can cover it.`,
+    );
   }
   if (carbon !== undefined && !carbon.regionResolved) {
-    warnings.push({
-      code: 'CARBON_REGION_UNKNOWN',
-      source: 'core',
-      message: `The configured carbon region is not in the bundled dataset, so GreenCI used ${carbon.region} and lowered the data-quality score. See docs/data-sources.md for the regions \`carbon.region\` accepts.`,
-    });
+    warn(
+      'CARBON_REGION_UNKNOWN',
+      `The configured carbon region is not in the bundled dataset, so GreenCI used ${carbon.region} and lowered the data-quality score. See docs/data-sources.md for the regions \`carbon.region\` accepts.`,
+    );
   }
 
   if (criticalPath.method === 'interval-fallback') {
-    warnings.push({
-      code: 'WORKFLOW_DAG_UNAVAILABLE',
-      source: 'core',
-      message:
-        'The workflow definition could not be used to rebuild the needs graph; criticality is an interval-overlap estimate and is not an exact DAG critical path.',
-    });
+    warn(
+      'WORKFLOW_DAG_UNAVAILABLE',
+      'The workflow definition could not be used to rebuild the needs graph; criticality is an interval-overlap estimate and is not an exact DAG critical path.',
+    );
   } else if (
     criticalPath.method === 'dag' &&
     criticalPath.confidence !== 'high'
   ) {
-    warnings.push({
-      code: 'CRITICAL_PATH_DEGRADED',
-      source: 'core',
-      message: `The critical path was reconstructed with ${criticalPath.confidence} confidence (${criticalPath.reasons.join(', ')}).`,
-    });
+    warn(
+      'CRITICAL_PATH_DEGRADED',
+      `The critical path was reconstructed with ${criticalPath.confidence} confidence (${criticalPath.reasons.join(', ')}).`,
+    );
   }
 
   if (failedRuleIds.length > 0) {
-    warnings.push({
-      code: 'RECOMMENDATION_RULE_FAILED',
-      source: 'core',
-      message: `Recommendation rule(s) ${failedRuleIds.join(', ')} failed and were skipped; the remaining rules were unaffected.`,
-    });
+    warn(
+      'RECOMMENDATION_RULE_FAILED',
+      `Recommendation rule(s) ${failedRuleIds.join(', ')} failed and were skipped; the remaining rules were unaffected.`,
+    );
   }
 
   return warnings;
