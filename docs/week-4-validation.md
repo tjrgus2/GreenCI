@@ -131,6 +131,28 @@ release engineering was meant to answer.
 verification, so the workflow refused to promote it. That is the gate behaving
 correctly and the tag is left in place as evidence.
 
+### v1.0.0-rc.3
+
+Cut after Week 4 to carry the report translation and the localized configuration
+errors, and to put a release back on `main`: rewriting history to drop the
+co-author trailers left rc.2's commit reachable only through its tag, so the
+attestation named a commit that was no longer part of the branch. Run
+[31829779786](https://github.com/tjrgus2/GreenCI/actions/runs/31829779786).
+
+| Artifact                       | Verified                                       |
+| ------------------------------ | ---------------------------------------------- |
+| `greenci-1.0.0-rc.3.tar.gz`    | SHA-256 `41aa9f14…`                            |
+| `greenci-1.0.0-rc.3-sbom.json` | CycloneDX 1.5, deterministic serial number     |
+| `dist-index.js.sha256`         | `2320b448…`, identical to the committed bundle |
+| Build provenance               | `gh attestation verify` succeeds               |
+
+The predicate binds to `3c5ead811321207fc9add6abe74755ca8f9ce88a`, which is on
+`main`, and `major-tag` skipped again for the prerelease. The demo repository runs
+this revision two ways at once — `greenci-live.yml` by release tag and
+`greenci-intelligence.yml` by commit SHA — on
+[PR #4](https://github.com/tjrgus2/greenci-demo/pull/4), where both comments
+render fully in Korean.
+
 ## Bugs found and fixed during Week 4
 
 1. **`eslint` could not resolve workspace types on a clean checkout.** The CLI
