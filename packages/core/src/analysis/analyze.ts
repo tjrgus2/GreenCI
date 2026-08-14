@@ -3,11 +3,25 @@ import {
   type BaselineComparison,
   type DerivedMetric,
 } from './baseline.js';
+import {
+  analyzeCriticalPath,
+  analyzeIntervalCriticality,
+  type CriticalPathAnalysis,
+} from './critical-path.js';
+import {
+  buildWorkflowDag,
+  definitionEdges,
+  parseWorkflowDefinition,
+  type WorkflowDefinition,
+} from './dag.js';
 import { excludeAnalyzerJob, type AnalyzerExclusion } from './exclusion.js';
+import { analyzeFailures } from './failures.js';
 import { analyzeRuntime, withCalculatedDurations } from './runtime.js';
 import { buildWorkflowShape, withLogicalIdentity } from './shape.js';
 import { dataManifest } from '../datasets/index.js';
 import { resolveConfig, type ResolvedConfig } from '../domain/config.js';
+import { evaluatePolicies } from '../policy/index.js';
+import { evaluateRecommendations } from '../recommendation/index.js';
 import {
   AnalysisReportSchema,
   REPORT_SCHEMA_VERSION,
@@ -23,7 +37,7 @@ import { estimateCarbon, type CarbonEstimate } from '../estimation/carbon.js';
 import { estimateCost, type CostEstimate } from '../estimation/cost.js';
 
 /** Published GreenCI version recorded in every report. */
-export const GREENCI_VERSION = '0.2.0';
+export const GREENCI_VERSION = '0.3.0';
 
 function referenceYear(generatedAt: string): number {
   const parsed = Date.parse(generatedAt);
@@ -54,6 +68,8 @@ function collectWarnings(
   baseline: BaselineComparison,
   cost: CostEstimate | undefined,
   carbon: CarbonEstimate | undefined,
+  criticalPath: CriticalPathAnalysis,
+  failedRuleIds: readonly string[],
 ): AnalysisWarning[] {
   const warnings: AnalysisWarning[] = [];
 
@@ -139,7 +155,66 @@ function collectWarnings(
     });
   }
 
+  if (criticalPath.method === 'interval-fallback') {
+    warnings.push({
+      code: 'WORKFLOW_DAG_UNAVAILABLE',
+      source: 'core',
+      message:
+        'The workflow definition could not be used to rebuild the needs graph; criticality is an interval-overlap estimate and is not an exact DAG critical path.',
+    });
+  } else if (
+    criticalPath.method === 'dag' &&
+    criticalPath.confidence !== 'high'
+  ) {
+    warnings.push({
+      code: 'CRITICAL_PATH_DEGRADED',
+      source: 'core',
+      message: `The critical path was reconstructed with ${criticalPath.confidence} confidence (${criticalPath.reasons.join(', ')}).`,
+    });
+  }
+
+  if (failedRuleIds.length > 0) {
+    warnings.push({
+      code: 'RECOMMENDATION_RULE_FAILED',
+      source: 'core',
+      message: `Recommendation rule(s) ${failedRuleIds.join(', ')} failed and were skipped; the remaining rules were unaffected.`,
+    });
+  }
+
   return warnings;
+}
+
+/**
+ * The adapter and the core engine can both notice the same degraded condition,
+ * so identical warnings are collapsed before they reach the report.
+ */
+function deduplicateWarnings(
+  warnings: readonly AnalysisWarning[],
+): AnalysisWarning[] {
+  const seen = new Set<string>();
+  return warnings.filter((warning) => {
+    const key = `${warning.code}|${warning.source}|${warning.message}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
+function resolveWorkflowDefinition(
+  workflowPath: string,
+  raw: unknown,
+  config: ResolvedConfig,
+): WorkflowDefinition | undefined {
+  if (
+    !config.analysis.criticalPath.enabled ||
+    !config.analysis.criticalPath.parseWorkflowDag ||
+    raw === undefined
+  ) {
+    return undefined;
+  }
+  return parseWorkflowDefinition(workflowPath, raw);
 }
 
 function baselineBranch(
@@ -180,11 +255,55 @@ export function analyzeWorkflow(input: unknown): AnalysisReport {
     .filter((job) => excludedJobIds.has(job.id))
     .map((job) => job.logicalJobId ?? job.apiName);
   const runtime = analyzeRuntime(jobs);
+
+  const definition = resolveWorkflowDefinition(
+    validated.identity.workflowPath,
+    validated.workflowDefinition,
+    config,
+  );
+  const edges =
+    validated.edges ??
+    (definition === undefined ? undefined : definitionEdges(definition));
   const shape = buildWorkflowShape({
     workflowPath: validated.identity.workflowPath,
     jobs,
-    edges: validated.edges,
+    edges,
   });
+
+  const criticalPathFor = (
+    candidates: readonly NormalizedJob[],
+    wallClockSeconds: number,
+  ): CriticalPathAnalysis => {
+    if (!config.analysis.criticalPath.enabled) {
+      return {
+        method: 'unavailable',
+        confidence: 'low',
+        totalSeconds: 0,
+        wallClockSharePercent: 0,
+        path: [],
+        nonCriticalHotspots: [],
+        reasons: ['critical-path-disabled'],
+      };
+    }
+    if (definition === undefined) {
+      return analyzeIntervalCriticality(
+        candidates,
+        wallClockSeconds,
+        config.report.topHotspots,
+      );
+    }
+    const dag = buildWorkflowDag(definition, candidates);
+    return dag.nodes.length === 0
+      ? analyzeIntervalCriticality(
+          candidates,
+          wallClockSeconds,
+          config.report.topHotspots,
+        )
+      : analyzeCriticalPath(dag, wallClockSeconds, config.report.topHotspots);
+  };
+
+  const criticalPath = criticalPathFor(jobs, runtime.wallClockSeconds);
+  const failures = analyzeFailures(jobs);
 
   const cost = config.cost.enabled
     ? estimateCost(jobs, validated.identity)
@@ -215,6 +334,16 @@ export function analyzeWorkflow(input: unknown): AnalysisReport {
           .operationalCarbonGrams.p50,
     });
   }
+  if (definition !== undefined && config.analysis.criticalPath.enabled) {
+    derivedMetrics.push({
+      metric: 'critical-path-seconds',
+      compute: (baselineJobs) =>
+        criticalPathFor(
+          baselineJobs,
+          analyzeRuntime(baselineJobs).wallClockSeconds,
+        ).totalSeconds,
+    });
+  }
 
   const baseline = compareWithBaseline({
     workflowPath: validated.identity.workflowPath,
@@ -232,16 +361,37 @@ export function analyzeWorkflow(input: unknown): AnalysisReport {
     regressionPercent: config.baseline.statistics.regressionPercent,
     modifiedZScoreThreshold: config.baseline.statistics.modifiedZScore,
     available: validated.baseline?.available ?? false,
-    edges: validated.edges,
+    edges,
     derivedMetrics,
     excludedLogicalJobIds,
   });
 
-  const warnings = [
+  const recommendationResult = evaluateRecommendations(
+    { jobs, runtime, baseline, criticalPath, failures, cost, carbon },
+    {
+      enabled: config.recommendations.enabled,
+      minimumConfidence: config.recommendations.minimumConfidence,
+      maxCount: config.recommendations.maxCount,
+    },
+  );
+  const policy = evaluatePolicies(config.policy.rules, {
+    baseline,
+    failures,
+    carbon,
+  });
+
+  const warnings = deduplicateWarnings([
     ...validated.warnings,
     ...resolution.warnings,
-    ...collectWarnings(exclusion, baseline, cost, carbon),
-  ];
+    ...collectWarnings(
+      exclusion,
+      baseline,
+      cost,
+      carbon,
+      criticalPath,
+      recommendationResult.failedRuleIds,
+    ),
+  ]);
 
   return AnalysisReportSchema.parse({
     schemaVersion: REPORT_SCHEMA_VERSION,
@@ -279,8 +429,16 @@ export function analyzeWorkflow(input: unknown): AnalysisReport {
       edgeCount: shape.edges.length,
     },
     baseline,
+    criticalPath,
+    failures,
+    recommendations: recommendationResult.recommendations,
+    policy,
     ...(cost === undefined ? {} : { cost }),
     ...(carbon === undefined ? {} : { carbon }),
+    ...(validated.tests === undefined ? {} : { tests: validated.tests }),
+    ...(validated.diagnostics === undefined
+      ? {}
+      : { diagnostics: validated.diagnostics }),
     dataManifest: dataManifest.datasets,
     warnings,
   });

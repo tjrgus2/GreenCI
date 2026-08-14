@@ -3,6 +3,7 @@ import { dirname, resolve } from 'node:path';
 import {
   AnalysisReportSchema,
   WorkflowRunIdentitySchema,
+  analyzeFailures,
   analyzeWorkflow,
   renderJobSummary,
   renderPullRequestComment,
@@ -15,6 +16,9 @@ import {
 import { collectBaseline } from './adapters/baseline.js';
 import { publishPullRequestComment } from './adapters/comments.js';
 import { collectCurrentRun, type GitHubDataSource } from './adapters/github.js';
+import { collectDiagnostics } from './adapters/logs.js';
+import { collectTestReport } from './adapters/tests.js';
+import { loadWorkflowDefinition } from './adapters/workflow.js';
 import { parseActionInputs } from './config/inputs.js';
 import { loadRepositoryConfig } from './config/repository-config.js';
 
@@ -24,6 +28,14 @@ export interface ActionIO {
   info(message: string): void;
   warning(message: string): void;
   setOutput(name: string, value: string | number): void;
+  setFailed(message: string): void;
+  annotate(annotation: {
+    readonly severity: 'error' | 'warning' | 'notice';
+    readonly message: string;
+    readonly file: string;
+    readonly line: number;
+    readonly column?: number | undefined;
+  }): void;
   writeSummary(markdown: string): Promise<void>;
   uploadArtifact(
     name: string,
@@ -202,6 +214,50 @@ export async function executeAction(
     `[GreenCI] INFO  collection.baseline completed runs=${baseline.samples.length}`,
   );
 
+  const workflowDefinition = resolution.config.analysis.criticalPath
+    .parseWorkflowDag
+    ? await loadWorkflowDefinition(source, {
+        owner: reference.owner,
+        repository: reference.repository,
+        path: identity.workflowPath,
+        ref: identity.headSha,
+      })
+    : { raw: undefined, warnings: [] };
+  for (const warning of workflowDefinition.warnings) {
+    io.warning(`[GreenCI] WARN  workflow.definition code=${warning.code}`);
+  }
+
+  const failuresPreview = analyzeFailures(collected.jobs);
+  const diagnostics = await collectDiagnostics(source, failuresPreview, {
+    owner: reference.owner,
+    repository: reference.repository,
+    enabled:
+      resolution.config.analysis.failureLogs.enabled && inputs.parseFailureLogs,
+    maxBytesPerJob: resolution.config.analysis.failureLogs.maxBytesPerJob,
+    maxJobs: resolution.config.analysis.failureLogs.maxJobs,
+    tailLines: resolution.config.analysis.failureLogs.tailLines,
+    annotations: resolution.config.report.annotations,
+  });
+  for (const warning of diagnostics.warnings) {
+    io.warning(`[GreenCI] WARN  diagnostics code=${warning.code}`);
+  }
+
+  const testRequest = resolution.config.analysis.testReports[0];
+  const tests =
+    testRequest === undefined
+      ? { report: undefined, warnings: [] }
+      : await collectTestReport(source, {
+          owner: reference.owner,
+          repository: reference.repository,
+          runId: identity.runId,
+          artifact: testRequest.artifact,
+          maxUncompressedBytes: testRequest.maxUncompressedBytes,
+          maxFiles: testRequest.maxFiles,
+        });
+  for (const warning of tests.warnings) {
+    io.warning(`[GreenCI] WARN  tests code=${warning.code}`);
+  }
+
   let report = analyzeWorkflow({
     identity,
     jobs: collected.jobs,
@@ -213,6 +269,9 @@ export async function executeAction(
       ...collected.warnings,
       ...repositoryConfig.warnings,
       ...baseline.warnings,
+      ...workflowDefinition.warnings,
+      ...diagnostics.warnings,
+      ...tests.warnings,
     ],
     ...(repositoryConfig.raw === undefined
       ? {}
@@ -223,10 +282,28 @@ export async function executeAction(
       ...(baseline.branch === undefined ? {} : { branch: baseline.branch }),
       samples: baseline.samples,
     },
+    ...(workflowDefinition.raw === undefined
+      ? {}
+      : { workflowDefinition: workflowDefinition.raw }),
+    ...(tests.report === undefined ? {} : { tests: tests.report }),
+    diagnostics: diagnostics.report,
   });
   io.info(
-    `[GreenCI] INFO  analysis.completed baseline_samples=${report.baseline.sampleCount} status=${report.baseline.status}`,
+    `[GreenCI] INFO  analysis.completed baseline_samples=${report.baseline.sampleCount} status=${report.baseline.status} critical_path=${report.criticalPath.method} recommendations=${report.recommendations.length} policy=${report.policy.conclusion}`,
   );
+
+  for (const annotation of diagnostics.annotations) {
+    if (annotation.file === undefined || annotation.line === undefined) {
+      continue;
+    }
+    io.annotate({
+      severity: annotation.severity,
+      message: `[${annotation.parserId}] ${annotation.message}`,
+      file: annotation.file,
+      line: annotation.line,
+      ...(annotation.column === undefined ? {} : { column: annotation.column }),
+    });
+  }
 
   const reportPath = resolve(
     environment.RUNNER_TEMP ?? dependencies.workingDirectory,
@@ -305,6 +382,18 @@ export async function executeAction(
     report.carbon?.operationalCarbonGrams.p95 ?? '',
   );
   io.setOutput('list-price-usd', report.cost?.grossListPriceUsd ?? '');
-  io.setOutput('policy-conclusion', 'skipped');
+  io.setOutput('policy-conclusion', report.policy.conclusion);
+  io.setOutput('critical-path-seconds', report.criticalPath.totalSeconds);
+  io.setOutput('recommendation-count', report.recommendations.length);
+
+  if (report.policy.conclusion === 'fail') {
+    const violated = report.policy.evaluations
+      .filter((evaluation) => !evaluation.passed && evaluation.mode === 'fail')
+      .map((evaluation) => evaluation.metric)
+      .join(', ');
+    io.setFailed(
+      `[GreenCI] Policy budget exceeded for: ${violated}. See the Job Summary for evidence.`,
+    );
+  }
   return report;
 }

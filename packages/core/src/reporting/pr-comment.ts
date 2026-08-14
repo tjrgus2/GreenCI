@@ -7,10 +7,40 @@ import {
   renderMetricTable,
   renderRegressionTable,
 } from './common.js';
-import { escapeMarkdown, truncate } from './format.js';
+import {
+  escapeMarkdown,
+  formatDuration,
+  formatRatio,
+  truncate,
+} from './format.js';
 import { createTranslator } from './i18n/index.js';
+import { renderPolicyBadge, renderRecommendationsSection } from './sections.js';
 
 export { REPORT_MARKER } from './common.js';
+
+/** A compact critical-path line, or nothing when it is unavailable. */
+function renderCriticalPathBrief(
+  report: AnalysisReport,
+  translate: ReturnType<typeof createTranslator>,
+): string[] {
+  const criticalPath = report.criticalPath;
+  if (criticalPath.method === 'unavailable' || criticalPath.path.length === 0) {
+    return [];
+  }
+  const top = criticalPath.path
+    .map((node) => `\`${escapeMarkdown(truncate(node.label, 40))}\``)
+    .join(' → ');
+  const suffix =
+    criticalPath.method === 'interval-fallback'
+      ? ` _(${translate('criticalPath.method.interval-fallback')})_`
+      : '';
+  return [
+    `**${translate('section.criticalPath')}:** ${top} · ${formatDuration(criticalPath.totalSeconds)} · ${formatRatio(
+      criticalPath.wallClockSharePercent / 100,
+    )}${suffix}`,
+    '',
+  ];
+}
 
 /**
  * Render the concise pull-request comment.
@@ -39,6 +69,14 @@ export function renderPullRequestComment(
     `## ${translate('section.topRegressions')}`,
     '',
     ...renderRegressionTable(report, translate, limit),
+    '',
+    ...renderCriticalPathBrief(report, translate),
+    ...renderRecommendationsSection(report, translate, {
+      withEvidence: false,
+      limit,
+    }),
+    '',
+    renderPolicyBadge(report, translate),
     '',
     '<details>',
     `<summary>${translate('section.details')}</summary>`,

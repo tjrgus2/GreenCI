@@ -54,6 +54,7 @@ const JobSchema = z
     name: z.string(),
     runner_name: z.string().nullable().optional(),
     labels: z.array(z.string()).default([]),
+    created_at: z.string().nullable().optional(),
     started_at: z.string().nullable(),
     completed_at: z.string().nullable(),
     conclusion: z.string().nullable(),
@@ -111,6 +112,21 @@ export interface GitHubDataSource {
     body: string;
   }): Promise<unknown>;
   getAuthenticatedLogin(): Promise<string | undefined>;
+  listArtifacts(parameters: {
+    owner: string;
+    repository: string;
+    runId: number;
+  }): Promise<unknown>;
+  downloadArtifact(parameters: {
+    owner: string;
+    repository: string;
+    artifactId: number;
+  }): Promise<ArrayBuffer>;
+  downloadJobLogs(parameters: {
+    owner: string;
+    repository: string;
+    jobId: number;
+  }): Promise<string>;
 }
 
 /** Input identifying the current workflow run in GitHub. */
@@ -215,6 +231,9 @@ function normalizeJob(job: z.infer<typeof JobSchema>): NormalizedJob {
     apiName: job.name,
     runnerLabels: job.labels,
     runnerClass: classifyRunner(job.labels, job.runner_name ?? null),
+    ...(job.created_at === null || job.created_at === undefined
+      ? {}
+      : { createdAt: job.created_at }),
     ...(job.started_at === null ? {} : { startedAt: job.started_at }),
     ...(job.completed_at === null ? {} : { completedAt: job.completed_at }),
     conclusion: normalizeConclusion(job.conclusion),
@@ -402,6 +421,35 @@ export function createGitHubDataSource(token: string): GitHubDataSource {
       } catch {
         return undefined;
       }
+    },
+    async listArtifacts(parameters) {
+      return octokit.paginate(octokit.rest.actions.listWorkflowRunArtifacts, {
+        owner: parameters.owner,
+        repo: parameters.repository,
+        run_id: parameters.runId,
+        per_page: 100,
+      });
+    },
+    async downloadArtifact(parameters) {
+      const response = await octokit.rest.actions.downloadArtifact({
+        owner: parameters.owner,
+        repo: parameters.repository,
+        artifact_id: parameters.artifactId,
+        archive_format: 'zip',
+      });
+      return response.data as ArrayBuffer;
+    },
+    async downloadJobLogs(parameters) {
+      const response = await octokit.rest.actions.downloadJobLogsForWorkflowRun(
+        {
+          owner: parameters.owner,
+          repo: parameters.repository,
+          job_id: parameters.jobId,
+        },
+      );
+      return typeof response.data === 'string'
+        ? response.data
+        : Buffer.from(response.data as ArrayBuffer).toString('utf8');
     },
   };
 }

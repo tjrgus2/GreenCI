@@ -98,6 +98,68 @@ export const en = {
   'baseline.excludedShape': 'Runs excluded by workflow shape',
   'baseline.fingerprint': 'Workflow shape fingerprint',
 
+  'section.criticalPath': 'Critical path',
+  'section.hotspots': 'Non-critical resource hotspots',
+  'section.recommendations': 'Recommendations',
+  'section.policy': 'Policy',
+  'section.tests': 'Test report',
+  'section.diagnostics': 'Failure diagnostics',
+  'section.failures': 'Failures',
+
+  'criticalPath.method.dag': 'Reconstructed from the workflow needs graph',
+  'criticalPath.method.interval-fallback':
+    'Interval-overlap estimate — the workflow definition was unavailable, so this is not an exact DAG critical path',
+  'criticalPath.method.unavailable': 'Not available for this run',
+  'criticalPath.total': 'Critical-path duration',
+  'criticalPath.share': 'Share of wall-clock time',
+  'criticalPath.waiting':
+    'Critical-path jobs increase how long developers wait. Non-critical hotspots do not, but they still consume runner time, cost, and carbon.',
+  'label.contribution': 'Contribution',
+  'label.runnerShare': 'Runner-time share',
+
+  'policy.conclusion.pass': 'All policies within budget',
+  'policy.conclusion.warn': 'Policy warning',
+  'policy.conclusion.fail': 'Policy failure',
+  'policy.conclusion.skipped': 'No policy configured',
+  'policy.rule': 'Rule',
+  'policy.actual': 'Actual',
+  'policy.threshold': 'Threshold',
+  'policy.mode': 'Mode',
+  'policy.result': 'Result',
+  'policy.passed': 'Within budget',
+  'policy.violated': 'Exceeded',
+  'policy.notEvaluated': 'Not evaluated',
+
+  'recommendation.evidence': 'Evidence',
+  'recommendation.impact': 'Estimated upper-bound saving',
+  'recommendation.none': 'No recommendation reached the confidence threshold.',
+  'recommendation.disclaimer':
+    'Recommendations are deterministic, evidence-based suggestions, not guaranteed fixes.',
+
+  'tests.total': 'Tests',
+  'tests.passed': 'Passed',
+  'tests.failed': 'Failed',
+  'tests.errored': 'Errored',
+  'tests.skipped': 'Skipped',
+  'tests.duration': 'Total test time',
+  'tests.slowestSuites': 'Slowest suites',
+  'tests.slowestCases': 'Slowest test cases',
+  'tests.failedCases': 'Failed test cases',
+  'tests.rejected': 'Rejected archive members',
+  'tests.unavailable': 'No test-report artifact was analyzed.',
+
+  'diagnostics.disabled':
+    'Failed-log parsing is disabled. Enable `analysis.failure-logs.enabled` to parse a bounded tail of failed job logs locally.',
+  'diagnostics.none': 'No diagnostic could be extracted.',
+  'diagnostics.privacy':
+    'Logs are read in memory, bounded, credential-redacted, and never stored or transmitted.',
+
+  'failures.none': 'No job failed.',
+  'failures.job': 'Failed job',
+  'failures.step': 'Failed step',
+  'failures.before': 'Time before failure',
+  'failures.position': 'Failure position in wall-clock window',
+
   'warnings.none': 'No warnings.',
   'footer.generated':
     'GreenCI {version} · report schema {schema} · locale {locale}',

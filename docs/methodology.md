@@ -189,7 +189,101 @@ GreenCI does not guess the GitHub data-centre location. When the configured
 region is not in the bundled dataset it falls back to the global average,
 records `regionResolved: false`, and lowers the grade.
 
-## 6. What GreenCI does not claim
+## 6. Critical path versus resource hotspots
+
+GreenCI answers two different questions and never conflates them:
+
+```text
+Critical path        → how long developers waited
+Parallel hotspot     → how much runner time, cost, and carbon was consumed
+```
+
+A `security-matrix` job can consume more runner time than any other job while
+delaying nobody; an `integration-test` job on the critical path can be cheap and
+still dominate merge latency.
+
+The graph is rebuilt from `jobs.<id>.needs` in the exact workflow definition used
+by the run. API job names are mapped onto declared jobs through the logical job
+id (GitHub renders a matrix job as `name (values)`). A matrix job becomes one
+node whose _duration_ is its slowest variant — because dependents wait for all
+of them — and whose _runner time_ is the sum of every variant.
+
+Mapping confidence is reported, never assumed:
+
+| Confidence | Condition                                                               |
+| ---------- | ----------------------------------------------------------------------- |
+| High       | Every API job mapped to exactly one declared job, no matrix aggregation |
+| Medium     | Some API job was unmapped, or a matrix job was aggregated               |
+| Low        | Cycle detected, or nothing could be mapped                              |
+
+If the definition is unavailable, GreenCI falls back to interval-overlap
+analysis: how much wall-clock time each job occupied _alone_. That result is
+labelled `interval-fallback` everywhere it appears and is explicitly not
+presented as a DAG critical path.
+
+## 7. Recommendations
+
+Recommendations are produced by a deterministic rule engine. No model is
+consulted, no network call is made, and the same input always yields the same
+output. Every recommendation carries a rule id, a severity, a confidence score,
+its supporting evidence, and — where it can be bounded — an upper-bound impact
+estimate.
+
+| Rule                 | Fires when                                                   |
+| -------------------- | ------------------------------------------------------------ |
+| `GCI-CACHE-001`      | Install-shaped steps consume ≥ 15% of runner time and ≥ 20 s |
+| `GCI-DUP-001`        | An equivalent step runs in ≥ 2 jobs for ≥ 30 s combined      |
+| `GCI-MATRIX-001`     | A matrix group of ≥ 3 variants consumes ≥ 30% of runner time |
+| `GCI-ORDER-001`      | The first failure lands after ≥ 50% of the wall-clock window |
+| `GCI-CRITICAL-001`   | One critical-path node contributes ≥ 40% of the path         |
+| `GCI-REGRESSION-001` | A wall-clock or runner-time regression was confirmed         |
+| `GCI-FLAKY-001`      | Normalized MAD ≥ 0.2 over ≥ 5 baseline samples               |
+| `GCI-QUEUE-001`      | Queue time is ≥ 30 s and ≥ 25% of the wall-clock window      |
+
+`GCI-QUEUE-001` exists specifically so that a scheduling delay is never
+presented as a code optimization opportunity.
+
+Impact estimates scale cost and carbon by the share of runner time a change
+could remove and are always flagged `upperBound: true`. A rule that throws is
+isolated: it is named in a warning and the remaining rules still run.
+
+## 8. Policy engine
+
+The policy engine turns the analysis into an enforceable CI budget. It is
+deliberately separate from the recommendation engine.
+
+Supported metrics: wall-clock, runner-time, list-price, and carbon-p50
+regression percentages; absolute carbon p95 grams; failed-job count; workflow
+shape match; and critical-path regression percentage.
+
+Modes are `report`, `warn`, and `fail`. Two safety rules apply:
+
+1. A metric that could not be measured is never enforced — it is recorded as
+   `evaluated: false` with the reason.
+2. A `fail` rule is downgraded to `warn` when the underlying measurement is less
+   confident than the rule requires.
+
+**The default installation configures no rules at all**, so it cannot block a
+pull request.
+
+## 9. Test report analysis
+
+JUnit XML is parsed from the configured artifact and reported as totals, slowest
+suites, slowest cases, and failed cases. Because an artifact is
+attacker-controlled on a fork pull request, the archive is read by GreenCI's own
+hardened in-memory ZIP reader and the XML parser has entity processing disabled.
+Every refusal is surfaced in the report rather than silently dropped. See
+[security-model.md](security-model.md) for the full limit table.
+
+## 10. Failure diagnostics
+
+Failed-log parsing is off by default. When explicitly enabled it reads only the
+bounded tail of failed job logs, in memory, and emits sanitized,
+credential-redacted diagnostics. An annotation is only emitted when the parser
+produced a repository-relative path, a valid line, and a confidence at or above
+the configured threshold.
+
+## 11. What GreenCI does not claim
 
 - It does not measure energy; carbon figures are modeled estimates.
 - It does not know your invoice.
@@ -197,3 +291,9 @@ records `regionResolved: false`, and lowers the grade.
 - It does not treat an unmatched job or step as a regression.
 - It does not report a regression without enough samples or a comparable
   workflow shape.
+- It does not present an interval-overlap estimate as a DAG critical path.
+- It does not promise that a recommendation will work; recommendations are
+  evidence-based suggestions with bounded impact estimates.
+- It does not block a pull request by default, and never fails a job on a
+  measurement it is not confident about.
+- It does not execute, store, or transmit any artifact or log content.

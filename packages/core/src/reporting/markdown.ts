@@ -24,6 +24,14 @@ import {
   truncate,
 } from './format.js';
 import { createTranslator, type Translator } from './i18n/index.js';
+import {
+  renderCriticalPathSection,
+  renderDiagnosticsSection,
+  renderFailuresSection,
+  renderPolicySection,
+  renderRecommendationsSection,
+  renderTestsSection,
+} from './sections.js';
 
 export { escapeMarkdown, formatDuration } from './format.js';
 
@@ -331,9 +339,24 @@ export function renderJobSummary(report: AnalysisReport): string {
       report.jobs.flatMap(stepRows),
     ),
     '',
+    ...renderCriticalPathSection(report, translate),
+    '',
     ...renderBaselineSection(report, translate),
     '',
     ...renderNodeComparisons(report, translate),
+    '',
+    ...renderRecommendationsSection(report, translate, {
+      withEvidence: true,
+      limit: JOB_SUMMARY_ROW_LIMIT,
+    }),
+    '',
+    ...renderPolicySection(report, translate),
+    '',
+    ...renderFailuresSection(report, translate),
+    '',
+    ...renderTestsSection(report, translate),
+    '',
+    ...renderDiagnosticsSection(report, translate),
     '',
     ...renderCostSection(report, translate),
     '',

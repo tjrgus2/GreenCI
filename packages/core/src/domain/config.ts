@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { PolicyMode, PolicyRule } from '../policy/index.js';
 import { canonicalHash } from '../util/canonical.js';
 import type { AnalysisWarning } from './schemas.js';
 
@@ -33,18 +34,106 @@ const BaselineSchema = z
   })
   .strict();
 
+const AnnotationsSchema = z
+  .object({
+    enabled: z.boolean().default(true),
+    'max-count': z.number().int().min(0).max(50).default(20),
+    'min-confidence': z.number().min(0).max(1).default(0.9),
+  })
+  .strict();
+
 const ReportSchema = z
   .object({
     'pr-comment': z.boolean().default(true),
     'job-summary': z.boolean().default(true),
     'update-existing-comment': z.boolean().default(true),
     'top-hotspots': z.number().int().min(1).max(50).default(5),
+    annotations: AnnotationsSchema.prefault({}),
+  })
+  .strict();
+
+const CriticalPathSchema = z
+  .object({
+    enabled: z.boolean().default(true),
+    'parse-workflow-dag': z.boolean().default(true),
+  })
+  .strict();
+
+const FailureLogsSchema = z
+  .object({
+    enabled: z.boolean().default(false),
+    'max-bytes-per-job': z
+      .number()
+      .int()
+      .min(1024)
+      .max(8_388_608)
+      .default(2_097_152),
+    'max-jobs': z.number().int().min(1).max(10).default(3),
+    'tail-lines': z.number().int().min(50).max(20_000).default(2000),
+  })
+  .strict();
+
+const TestReportSchema = z
+  .object({
+    artifact: z.string().min(1).max(255),
+    format: z.literal('junit').default('junit'),
+    'max-uncompressed-bytes': z
+      .number()
+      .int()
+      .min(1024)
+      .max(52_428_800)
+      .default(10_485_760),
+    'max-files': z.number().int().min(1).max(1000).default(100),
   })
   .strict();
 
 const AnalysisSchema = z
   .object({
     'exclude-current-job': z.boolean().default(true),
+    'critical-path': CriticalPathSchema.prefault({}),
+    'failure-logs': FailureLogsSchema.prefault({}),
+    'test-reports': z.array(TestReportSchema).max(5).default([]),
+  })
+  .strict();
+
+const PolicyRuleSchema = z
+  .object({
+    metric: z.enum([
+      'wall-clock-regression-percent',
+      'runner-time-regression-percent',
+      'list-price-regression-percent',
+      'carbon-p50-regression-percent',
+      'carbon-p95-grams',
+      'failed-jobs',
+      'workflow-shape-match',
+      'critical-path-regression-percent',
+    ]),
+    operator: z
+      .enum([
+        'greater-than',
+        'greater-than-or-equal',
+        'less-than',
+        'less-than-or-equal',
+      ])
+      .default('greater-than'),
+    value: z.number().finite(),
+    mode: z.enum(['report', 'warn', 'fail']).optional(),
+    'minimum-confidence': z.enum(['high', 'medium', 'low']).default('medium'),
+  })
+  .strict();
+
+const PolicySchema = z
+  .object({
+    'default-mode': z.enum(['report', 'warn', 'fail']).default('warn'),
+    rules: z.array(PolicyRuleSchema).max(20).default([]),
+  })
+  .strict();
+
+const RecommendationsSchema = z
+  .object({
+    enabled: z.boolean().default(true),
+    'minimum-confidence': z.number().min(0).max(1).default(0.65),
+    'max-count': z.number().int().min(0).max(20).default(5),
   })
   .strict();
 
@@ -87,6 +176,8 @@ export const GreenCIConfigFileSchema = z
     analysis: AnalysisSchema.prefault({}),
     carbon: CarbonSchema.prefault({}),
     cost: CostSchema.prefault({}),
+    policy: PolicySchema.prefault({}),
+    recommendations: RecommendationsSchema.prefault({}),
   })
   .strict();
 
@@ -108,6 +199,11 @@ export interface ResolvedConfig {
     readonly jobSummary: boolean;
     readonly updateExistingComment: boolean;
     readonly topHotspots: number;
+    readonly annotations: {
+      readonly enabled: boolean;
+      readonly maxCount: number;
+      readonly minConfidence: number;
+    };
   };
   readonly baseline: {
     readonly branch: string | undefined;
@@ -123,6 +219,22 @@ export interface ResolvedConfig {
   };
   readonly analysis: {
     readonly excludeCurrentJob: boolean;
+    readonly criticalPath: {
+      readonly enabled: boolean;
+      readonly parseWorkflowDag: boolean;
+    };
+    readonly failureLogs: {
+      readonly enabled: boolean;
+      readonly maxBytesPerJob: number;
+      readonly maxJobs: number;
+      readonly tailLines: number;
+    };
+    readonly testReports: readonly {
+      readonly artifact: string;
+      readonly format: 'junit';
+      readonly maxUncompressedBytes: number;
+      readonly maxFiles: number;
+    }[];
   };
   readonly carbon: {
     readonly enabled: boolean;
@@ -136,6 +248,15 @@ export interface ResolvedConfig {
   readonly cost: {
     readonly enabled: boolean;
     readonly showPublicRunnerEquivalent: boolean;
+  };
+  readonly policy: {
+    readonly defaultMode: PolicyMode;
+    readonly rules: readonly PolicyRule[];
+  };
+  readonly recommendations: {
+    readonly enabled: boolean;
+    readonly minimumConfidence: number;
+    readonly maxCount: number;
   };
 }
 
@@ -154,6 +275,11 @@ function toResolved(file: GreenCIConfigFile): ResolvedConfig {
       jobSummary: file.report['job-summary'],
       updateExistingComment: file.report['update-existing-comment'],
       topHotspots: file.report['top-hotspots'],
+      annotations: {
+        enabled: file.report.annotations.enabled,
+        maxCount: file.report.annotations['max-count'],
+        minConfidence: file.report.annotations['min-confidence'],
+      },
     },
     baseline: {
       branch: file.baseline.branch,
@@ -169,6 +295,22 @@ function toResolved(file: GreenCIConfigFile): ResolvedConfig {
     },
     analysis: {
       excludeCurrentJob: file.analysis['exclude-current-job'],
+      criticalPath: {
+        enabled: file.analysis['critical-path'].enabled,
+        parseWorkflowDag: file.analysis['critical-path']['parse-workflow-dag'],
+      },
+      failureLogs: {
+        enabled: file.analysis['failure-logs'].enabled,
+        maxBytesPerJob: file.analysis['failure-logs']['max-bytes-per-job'],
+        maxJobs: file.analysis['failure-logs']['max-jobs'],
+        tailLines: file.analysis['failure-logs']['tail-lines'],
+      },
+      testReports: file.analysis['test-reports'].map((entry) => ({
+        artifact: entry.artifact,
+        format: entry.format,
+        maxUncompressedBytes: entry['max-uncompressed-bytes'],
+        maxFiles: entry['max-files'],
+      })),
     },
     carbon: {
       enabled: file.carbon.enabled,
@@ -182,6 +324,21 @@ function toResolved(file: GreenCIConfigFile): ResolvedConfig {
     cost: {
       enabled: file.cost.enabled,
       showPublicRunnerEquivalent: file.cost['show-public-runner-equivalent'],
+    },
+    policy: {
+      defaultMode: file.policy['default-mode'],
+      rules: file.policy.rules.map((rule) => ({
+        metric: rule.metric,
+        operator: rule.operator,
+        value: rule.value,
+        mode: rule.mode ?? file.policy['default-mode'],
+        minimumConfidence: rule['minimum-confidence'],
+      })),
+    },
+    recommendations: {
+      enabled: file.recommendations.enabled,
+      minimumConfidence: file.recommendations['minimum-confidence'],
+      maxCount: file.recommendations['max-count'],
     },
   };
 }

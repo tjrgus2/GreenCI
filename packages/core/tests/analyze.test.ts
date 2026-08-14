@@ -74,7 +74,7 @@ describe('analyzeWorkflow', () => {
     expect(report.current.runnerSeconds).toBe(60);
     expect(report.current.wallClockSeconds).toBe(60);
     expect(report.analyzerExclusion.method).toBe('name');
-    expect(report.schemaVersion).toBe('1.1.0');
+    expect(report.schemaVersion).toBe('1.2.0');
     expect(report.locale).toBe('en');
     expect(report.shape.fingerprint).toMatch(/^[0-9a-f]{64}$/u);
     expect(report.dataManifest.length).toBeGreaterThan(0);
@@ -116,7 +116,60 @@ describe('analyzeWorkflow', () => {
       'ANALYZER_NOT_IDENTIFIED',
       'STEP_TIMESTAMPS_INCOMPLETE',
       'BASELINE_UNAVAILABLE',
+      'WORKFLOW_DAG_UNAVAILABLE',
     ]);
+  });
+
+  it('collapses a warning the adapter and the engine both reported', () => {
+    const duplicate = {
+      code: 'WORKFLOW_DAG_UNAVAILABLE' as const,
+      source: 'core' as const,
+      message:
+        'The workflow definition could not be used to rebuild the needs graph; criticality is an interval-overlap estimate and is not an exact DAG critical path.',
+    };
+    const report = analyzeWorkflow({ ...input, warnings: [duplicate] });
+    expect(
+      report.warnings.filter(
+        (warning) => warning.code === 'WORKFLOW_DAG_UNAVAILABLE',
+      ),
+    ).toHaveLength(1);
+  });
+
+  it('rebuilds the critical path from the workflow definition', () => {
+    const report = analyzeWorkflow({
+      ...input,
+      jobs: [
+        job(1, 'build'),
+        {
+          ...job(2, 'test'),
+          startedAt: '2026-07-20T00:01:00.000Z',
+          completedAt: '2026-07-20T00:03:00.000Z',
+        },
+        job(3, 'lint'),
+      ],
+      currentJobName: 'greenci',
+      workflowDefinition: {
+        jobs: {
+          build: {},
+          test: { needs: 'build' },
+          lint: {},
+        },
+      },
+    });
+    expect(report.criticalPath.method).toBe('dag');
+    expect(report.criticalPath.confidence).toBe('high');
+    expect(report.criticalPath.path.map((node) => node.id)).toEqual([
+      'build',
+      'test',
+    ]);
+    expect(report.criticalPath.totalSeconds).toBe(180);
+    expect(
+      report.criticalPath.nonCriticalHotspots.map((hotspot) => hotspot.id),
+    ).toEqual(['lint']);
+    expect(report.shape.edgesAvailable).toBe(true);
+    expect(report.warnings.map((warning) => warning.code)).not.toContain(
+      'WORKFLOW_DAG_UNAVAILABLE',
+    );
   });
 
   it('reports an unavailable baseline without cost or carbon regressions', () => {

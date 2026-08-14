@@ -97,6 +97,68 @@ export const ko: Messages = {
   'baseline.excludedShape': '구조 불일치로 제외한 실행 수',
   'baseline.fingerprint': '워크플로 구조 지문',
 
+  'section.criticalPath': 'Critical Path',
+  'section.hotspots': 'Critical Path 밖의 자원 소비 지점',
+  'section.recommendations': '개선 제안',
+  'section.policy': '정책',
+  'section.tests': '테스트 리포트',
+  'section.diagnostics': '실패 진단',
+  'section.failures': '실패',
+
+  'criticalPath.method.dag': '워크플로 needs 그래프로 재구성함',
+  'criticalPath.method.interval-fallback':
+    '구간 중첩 기반 추정 — 워크플로 정의를 사용할 수 없어 정확한 DAG Critical Path가 아닙니다',
+  'criticalPath.method.unavailable': '이 실행에서는 계산할 수 없음',
+  'criticalPath.total': 'Critical Path 소요 시간',
+  'criticalPath.share': '실제 경과 시간 대비 비중',
+  'criticalPath.waiting':
+    'Critical Path 위의 Job은 개발자가 기다리는 시간을 늘립니다. Critical Path 밖의 지점은 대기 시간을 늘리지 않지만 러너 시간·비용·탄소를 소비합니다.',
+  'label.contribution': '기여도',
+  'label.runnerShare': '러너 시간 비중',
+
+  'policy.conclusion.pass': '모든 정책이 예산 이내',
+  'policy.conclusion.warn': '정책 경고',
+  'policy.conclusion.fail': '정책 실패',
+  'policy.conclusion.skipped': '설정된 정책 없음',
+  'policy.rule': '규칙',
+  'policy.actual': '실측값',
+  'policy.threshold': '임계값',
+  'policy.mode': '모드',
+  'policy.result': '결과',
+  'policy.passed': '예산 이내',
+  'policy.violated': '초과',
+  'policy.notEvaluated': '평가하지 않음',
+
+  'recommendation.evidence': '근거',
+  'recommendation.impact': '절감 가능량(상한 추정)',
+  'recommendation.none': '신뢰도 기준을 넘은 제안이 없습니다.',
+  'recommendation.disclaimer':
+    '개선 제안은 결정론적이고 근거 기반의 제안이며, 보장된 해결책이 아닙니다.',
+
+  'tests.total': '테스트 수',
+  'tests.passed': '성공',
+  'tests.failed': '실패',
+  'tests.errored': '오류',
+  'tests.skipped': '건너뜀',
+  'tests.duration': '총 테스트 시간',
+  'tests.slowestSuites': '가장 느린 Suite',
+  'tests.slowestCases': '가장 느린 테스트 케이스',
+  'tests.failedCases': '실패한 테스트 케이스',
+  'tests.rejected': '거부된 아카이브 항목',
+  'tests.unavailable': '분석한 테스트 리포트 아티팩트가 없습니다.',
+
+  'diagnostics.disabled':
+    '실패 로그 파싱이 비활성화되어 있습니다. `analysis.failure-logs.enabled`를 켜면 실패한 Job 로그의 제한된 끝부분만 로컬에서 분석합니다.',
+  'diagnostics.none': '추출된 진단 결과가 없습니다.',
+  'diagnostics.privacy':
+    '로그는 메모리에서만 읽고, 크기를 제한하며, 자격 증명을 마스킹하고, 저장하거나 외부로 전송하지 않습니다.',
+
+  'failures.none': '실패한 Job이 없습니다.',
+  'failures.job': '실패한 Job',
+  'failures.step': '실패한 Step',
+  'failures.before': '실패까지 소요 시간',
+  'failures.position': '전체 경과 시간 중 실패 지점',
+
   'warnings.none': '경고 없음.',
   'footer.generated':
     'GreenCI {version} · 리포트 스키마 {schema} · 로케일 {locale}',

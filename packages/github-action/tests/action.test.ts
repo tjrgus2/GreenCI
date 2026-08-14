@@ -100,22 +100,33 @@ function collectingIO(
   outputs: Map<string, string | number>;
   warnings: string[];
   summaries: string[];
+  failures: string[];
+  annotations: { file: string; line: number; message: string }[];
 } {
   const outputs = new Map<string, string | number>();
   const warnings: string[] = [];
   const summaries: string[] = [];
+  const failures: string[] = [];
+  const annotations: { file: string; line: number; message: string }[] = [];
   const io: ActionIO = {
     getInput: (name) => values.get(name) ?? '',
     info: () => undefined,
     warning: (message) => warnings.push(message),
     setOutput: (name, value) => outputs.set(name, value),
+    setFailed: (message) => failures.push(message),
+    annotate: (annotation) =>
+      annotations.push({
+        file: annotation.file,
+        line: annotation.line,
+        message: annotation.message,
+      }),
     async writeSummary(markdown) {
       summaries.push(markdown);
     },
     async uploadArtifact() {},
     ...overrides,
   };
-  return { io, outputs, warnings, summaries };
+  return { io, outputs, warnings, summaries, failures, annotations };
 }
 
 describe('Action inputs', () => {
@@ -428,5 +439,138 @@ describe('executeAction', () => {
     expect(report.carbon?.region).toBe('KR');
     expect(report.carbon?.regionResolved).toBe(true);
     expect(report.locale).toBe('ko');
+  });
+
+  it('rebuilds the critical path from the fetched workflow definition', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'greenci-action-test-'));
+    temporaryDirectories.push(directory);
+    const workflow = [
+      'name: CI',
+      'jobs:',
+      '  build:',
+      '    name: build',
+      '  greenci:',
+      '    name: greenci',
+      '    needs: [build]',
+      '',
+    ].join('\n');
+    const { io, outputs } = collectingIO(
+      inputs({ 'upload-report-artifact': 'false' }),
+    );
+    const report = await executeAction(
+      io,
+      { ...environment, RUNNER_TEMP: directory },
+      {
+        createSource: () =>
+          source(
+            { visibility: 'public' },
+            {
+              async getFileContent(parameters) {
+                if (parameters.path === '.github/workflows/ci.yml') {
+                  return {
+                    type: 'file',
+                    encoding: 'base64',
+                    size: workflow.length,
+                    content: Buffer.from(workflow, 'utf8').toString('base64'),
+                  };
+                }
+                throw Object.assign(new Error('Not Found'), { status: 404 });
+              },
+            },
+          ),
+        now: () => new Date('2026-07-20T00:02:00.000Z'),
+        workingDirectory: directory,
+      },
+    );
+    expect(report.criticalPath.method).toBe('dag');
+    expect(report.criticalPath.path.map((node) => node.id)).toEqual(['build']);
+    expect(report.shape.edgesAvailable).toBe(true);
+    expect(outputs.get('critical-path-seconds')).toBe(60);
+    expect(report.warnings.map((warning) => warning.code)).not.toContain(
+      'WORKFLOW_DAG_UNAVAILABLE',
+    );
+  });
+
+  it('fails the job only when a confident policy budget is exceeded', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'greenci-action-test-'));
+    temporaryDirectories.push(directory);
+    const config = [
+      'version: 1',
+      'policy:',
+      '  rules:',
+      '    - metric: runner-time-regression-percent',
+      '      operator: greater-than',
+      '      value: 5',
+      '      mode: fail',
+      '      minimum-confidence: medium',
+      '',
+    ].join('\n');
+    const { io, outputs, failures } = collectingIO(
+      inputs({ 'upload-report-artifact': 'false' }),
+    );
+    const report = await executeAction(
+      io,
+      { ...environment, RUNNER_TEMP: directory },
+      {
+        createSource: () =>
+          source(
+            { visibility: 'public' },
+            {
+              async getFileContent(parameters) {
+                if (parameters.path === '.greenci.yml') {
+                  return {
+                    type: 'file',
+                    encoding: 'base64',
+                    size: config.length,
+                    content: Buffer.from(config, 'utf8').toString('base64'),
+                  };
+                }
+                throw Object.assign(new Error('Not Found'), { status: 404 });
+              },
+              async listSuccessfulRuns() {
+                return Array.from({ length: 6 }, (_, index) => ({
+                  id: 700 + index,
+                  run_attempt: 1,
+                  head_sha: `sha${index}`,
+                  head_branch: 'main',
+                  created_at: '2026-07-19T00:00:00Z',
+                  conclusion: 'success',
+                }));
+              },
+              async listJobsForRunAttempt(parameters) {
+                return parameters.runId === 100
+                  ? currentJobs(60)
+                  : [...currentJobs(20 + (parameters.runId % 3)).slice(0, 1)];
+              },
+            },
+          ),
+        now: () => new Date('2026-07-20T00:02:00.000Z'),
+        workingDirectory: directory,
+      },
+    );
+    expect(report.baseline.status).toBe('ready');
+    expect(report.policy.conclusion).toBe('fail');
+    expect(outputs.get('policy-conclusion')).toBe('fail');
+    expect(failures[0]).toContain('Policy budget exceeded');
+  });
+
+  it('does not fail the job with the default configuration', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'greenci-action-test-'));
+    temporaryDirectories.push(directory);
+    const { io, outputs, failures } = collectingIO(
+      inputs({ 'upload-report-artifact': 'false' }),
+    );
+    const report = await executeAction(
+      io,
+      { ...environment, RUNNER_TEMP: directory },
+      {
+        createSource: () => source(),
+        now: () => new Date('2026-07-20T00:02:00.000Z'),
+        workingDirectory: directory,
+      },
+    );
+    expect(report.policy.conclusion).toBe('skipped');
+    expect(outputs.get('policy-conclusion')).toBe('skipped');
+    expect(failures).toEqual([]);
   });
 });

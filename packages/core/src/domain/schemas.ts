@@ -53,9 +53,11 @@ export const NormalizedJobSchema = z
     matrixSignature: z.string().optional(),
     runnerLabels: z.array(z.string()),
     runnerClass: z.string(),
+    createdAt: z.string().datetime({ offset: true }).optional(),
     startedAt: z.string().datetime({ offset: true }).optional(),
     completedAt: z.string().datetime({ offset: true }).optional(),
     durationSeconds: z.number().nonnegative().optional(),
+    queueSeconds: z.number().nonnegative().optional(),
     conclusion: ConclusionSchema,
     steps: z.array(NormalizedStepSchema),
   })
@@ -85,6 +87,13 @@ export const AnalysisWarningSchema = z
       'CARBON_REGION_UNKNOWN',
       'PR_COMMENT_UNAVAILABLE',
       'PR_COMMENT_FAILED',
+      'WORKFLOW_DAG_UNAVAILABLE',
+      'CRITICAL_PATH_DEGRADED',
+      'RECOMMENDATION_RULE_FAILED',
+      'TEST_ARTIFACT_UNAVAILABLE',
+      'TEST_ARTIFACT_UNSAFE',
+      'FAILURE_LOG_UNAVAILABLE',
+      'FAILURE_LOG_TRUNCATED',
     ]),
     source: z.enum(['core', 'github-api', 'action']),
     message: z.string().min(1),
@@ -119,6 +128,70 @@ export const BaselineInputSchema = z
   })
   .strict();
 
+const TestCaseSchema = z
+  .object({
+    suite: z.string(),
+    name: z.string(),
+    durationSeconds: z.number().finite().nonnegative(),
+    status: z.enum(['passed', 'failed', 'error', 'skipped']),
+    message: z.string().optional(),
+  })
+  .strict();
+
+/** Aggregated JUnit results parsed from a hardened artifact reader. */
+export const TestReportSchema = z
+  .object({
+    artifact: z.string().min(1),
+    total: z.number().int().nonnegative(),
+    passed: z.number().int().nonnegative(),
+    failed: z.number().int().nonnegative(),
+    errored: z.number().int().nonnegative(),
+    skipped: z.number().int().nonnegative(),
+    durationSeconds: z.number().finite().nonnegative(),
+    parsedFiles: z.number().int().nonnegative(),
+    truncated: z.boolean(),
+    slowestSuites: z.array(
+      z
+        .object({
+          name: z.string(),
+          total: z.number().int().nonnegative(),
+          failed: z.number().int().nonnegative(),
+          durationSeconds: z.number().finite().nonnegative(),
+        })
+        .strict(),
+    ),
+    slowestCases: z.array(TestCaseSchema),
+    failedCases: z.array(TestCaseSchema),
+    rejections: z.array(
+      z.object({ path: z.string(), reason: z.string() }).strict(),
+    ),
+  })
+  .strict();
+
+/** Sanitized diagnostics extracted from opt-in failed-job log parsing. */
+export const DiagnosticsReportSchema = z
+  .object({
+    enabled: z.boolean(),
+    jobsParsed: z.number().int().nonnegative(),
+    annotationsEmitted: z.number().int().nonnegative(),
+    diagnostics: z.array(
+      z
+        .object({
+          parserId: z.string().min(1),
+          severity: z.enum(['error', 'warning', 'notice']),
+          message: z.string(),
+          file: z.string().optional(),
+          line: z.number().int().positive().optional(),
+          column: z.number().int().positive().optional(),
+          confidence: z.number().min(0).max(1),
+          fingerprint: z.string().min(1),
+          jobName: z.string(),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+
 /** Validated input accepted by the deterministic analysis orchestrator. */
 export const AnalyzeWorkflowInputSchema = z
   .object({
@@ -132,6 +205,9 @@ export const AnalyzeWorkflowInputSchema = z
     baselineRuns: z.number().int().min(1).max(20).optional(),
     baseline: BaselineInputSchema.optional(),
     edges: z.array(WorkflowEdgeSchema).optional(),
+    workflowDefinition: z.unknown().optional(),
+    tests: TestReportSchema.optional(),
+    diagnostics: DiagnosticsReportSchema.optional(),
   })
   .strict();
 

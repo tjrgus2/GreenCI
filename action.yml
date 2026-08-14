@@ -48,6 +48,10 @@ outputs:
     description: Estimated gross list-price equivalent
   policy-conclusion:
     description: pass, warn, fail, or skipped
+  critical-path-seconds:
+    description: Total duration of the analyzed critical path
+  recommendation-count:
+    description: Number of recommendations that met the confidence threshold
 
 runs:
   using: node24
