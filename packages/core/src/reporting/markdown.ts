@@ -1,6 +1,7 @@
 import type { AnalysisReport } from '../domain/report.js';
 import type { NormalizedJob } from '../domain/schemas.js';
 import {
+  formatZScore,
   renderConfidenceLine,
   renderEstimationDetails,
   renderHeadline,
@@ -71,7 +72,7 @@ function renderBaselineSection(
     formatNumber(metric.baselineMedian, 3),
     formatNumber(metric.current, 3),
     formatSignedPercent(metric.percentChange),
-    formatNumber(metric.modifiedZScore, 2),
+    formatZScore(metric),
     escapeMarkdown(metric.scaleMethod),
     String(metric.sampleCount),
     translateVerdict(translate, metric.verdict),
@@ -145,7 +146,7 @@ function renderNodeComparisons(
       formatDuration(entry.baselineMedian),
       formatDuration(entry.current),
       formatSignedPercent(entry.percentChange),
-      formatNumber(entry.modifiedZScore, 2),
+      formatZScore(entry),
       String(entry.sampleCount),
       translateVerdict(translate, entry.verdict),
     ]);
