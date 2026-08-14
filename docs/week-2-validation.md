@@ -12,7 +12,7 @@ Korean rendering.
 | Prettier                                      | pass                                                              |
 | ESLint                                        | pass                                                              |
 | Strict TypeScript (`tsc -b` and test project) | pass                                                              |
-| Vitest                                        | 136 / 136                                                         |
+| Vitest                                        | 135 / 135                                                         |
 | Line coverage                                 | 97.70% (threshold 85%)                                            |
 | Branch coverage                               | 86.66% (threshold 80%)                                            |
 | `pnpm data:verify`                            | manifest and embedded copy match `data/*.json`                    |
