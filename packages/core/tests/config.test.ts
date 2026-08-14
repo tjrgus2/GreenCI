@@ -46,11 +46,17 @@ describe('configuration resolution', () => {
     expect(result.config.carbon.simulationSamples).toBe(500);
   });
 
-  it('rejects unknown keys and degrades to defaults with a warning', () => {
+  it('names the unknown key it rejected and degrades to defaults', () => {
     const result = resolveConfig({ verison: 1 });
     expect(result.config).toEqual(DEFAULT_CONFIG);
     expect(result.warnings[0]?.code).toBe('CONFIG_INVALID');
-    expect(result.warnings[0]?.message).toContain('verison');
+    expect(result.warnings[0]?.message).toContain('unknown key(s) `verison`');
+    expect(result.warnings[0]?.message).toContain('(root)');
+  });
+
+  it('locates a nested value error by path', () => {
+    const result = resolveConfig({ baseline: { 'successful-runs': 999 } });
+    expect(result.warnings[0]?.message).toContain('baseline.successful-runs');
   });
 
   it('rejects an inconsistent triangular range', () => {
