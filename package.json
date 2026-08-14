@@ -18,18 +18,25 @@
     "test": "pnpm build && vitest run",
     "test:coverage": "pnpm build && vitest run --coverage",
     "typecheck": "tsc -b && tsc -p tsconfig.test.json",
-    "verify:dist": "tsx scripts/verify-dist.ts"
+    "verify:dist": "tsx scripts/verify-dist.ts",
+    "data:write": "tsx scripts/datasets.ts write",
+    "data:verify": "tsx scripts/datasets.ts verify",
+    "schemas:write": "tsx scripts/schemas.ts write",
+    "schemas:verify": "tsx scripts/schemas.ts verify"
   },
   "devDependencies": {
     "@eslint/js": "latest",
+    "@greenci/core": "workspace:*",
     "@types/node": "latest",
     "@vitest/coverage-v8": "latest",
+    "ajv": "latest",
     "eslint": "latest",
     "fast-check": "latest",
     "prettier": "latest",
     "tsx": "latest",
     "typescript": "6.0.3",
     "typescript-eslint": "latest",
-    "vitest": "latest"
+    "vitest": "latest",
+    "zod": "latest"
   }
 }

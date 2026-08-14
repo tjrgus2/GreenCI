@@ -1,0 +1,61 @@
+{
+  "datasetId": "carbon-intensity",
+  "version": "2026.08",
+  "modelVersion": "carbon-intensity@2026.08",
+  "unit": "gCO2eq-per-kWh",
+  "source": "https://ember-energy.org/data/electricity-data-explorer/",
+  "effectiveDate": "2026-01-01",
+  "retrievedAt": "2026-08-14",
+  "licenseNote": "Annual average grid carbon-intensity figures reproduced with source attribution. Values are yearly averages and do not reflect the marginal intensity at the moment a job executed.",
+  "defaultRegion": "GLOBAL",
+  "regions": [
+    {
+      "region": "GLOBAL",
+      "name": "Global average grid",
+      "gramsPerKwh": { "min": 430, "mode": 481, "max": 540 },
+      "quality": 0.5,
+      "year": 2024,
+      "source": "https://ember-energy.org/data/electricity-data-explorer/"
+    },
+    {
+      "region": "KR",
+      "name": "Republic of Korea",
+      "gramsPerKwh": { "min": 395, "mode": 436, "max": 485 },
+      "quality": 0.7,
+      "year": 2024,
+      "source": "https://ember-energy.org/data/electricity-data-explorer/"
+    },
+    {
+      "region": "US",
+      "name": "United States",
+      "gramsPerKwh": { "min": 330, "mode": 369, "max": 415 },
+      "quality": 0.7,
+      "year": 2024,
+      "source": "https://ember-energy.org/data/electricity-data-explorer/"
+    },
+    {
+      "region": "EU",
+      "name": "European Union",
+      "gramsPerKwh": { "min": 210, "mode": 251, "max": 300 },
+      "quality": 0.7,
+      "year": 2024,
+      "source": "https://ember-energy.org/data/electricity-data-explorer/"
+    },
+    {
+      "region": "GB",
+      "name": "United Kingdom",
+      "gramsPerKwh": { "min": 200, "mode": 238, "max": 285 },
+      "quality": 0.7,
+      "year": 2024,
+      "source": "https://ember-energy.org/data/electricity-data-explorer/"
+    },
+    {
+      "region": "JP",
+      "name": "Japan",
+      "gramsPerKwh": { "min": 440, "mode": 486, "max": 535 },
+      "quality": 0.7,
+      "year": 2024,
+      "source": "https://ember-energy.org/data/electricity-data-explorer/"
+    }
+  ]
+}

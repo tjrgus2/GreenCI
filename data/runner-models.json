@@ -1,0 +1,67 @@
+{
+  "datasetId": "runner-models",
+  "version": "2026.08",
+  "modelVersion": "runner-models@2026.08",
+  "unit": "watts",
+  "source": "https://www.cloudcarbonfootprint.org/docs/methodology combined with https://docs.github.com/en/actions/reference/runners/github-hosted-runners",
+  "effectiveDate": "2026-07-01",
+  "retrievedAt": "2026-08-14",
+  "licenseNote": "Modeled power envelopes derived from published open methodology coefficients. These are estimates for the virtual-machine share attributable to a job, not measurements of physical hardware.",
+  "models": [
+    {
+      "runnerClass": "linux-x64",
+      "vcpus": 2,
+      "memoryGb": 7,
+      "idleWatts": { "min": 1.4, "mode": 2.5, "max": 3.2 },
+      "peakWatts": { "min": 7.0, "mode": 10.5, "max": 15.0 },
+      "memoryWattsPerGb": { "min": 0.3, "mode": 0.3925, "max": 0.5 },
+      "quality": 0.55,
+      "source": "https://www.cloudcarbonfootprint.org/docs/methodology",
+      "notes": "GitHub publishes 2-vCPU/7-GiB standard Linux runners but has also served larger public-repository runners. The range intentionally covers both variants."
+    },
+    {
+      "runnerClass": "linux-arm64",
+      "vcpus": 2,
+      "memoryGb": 8,
+      "idleWatts": { "min": 1.0, "mode": 1.8, "max": 2.4 },
+      "peakWatts": { "min": 4.5, "mode": 7.0, "max": 9.5 },
+      "memoryWattsPerGb": { "min": 0.25, "mode": 0.3725, "max": 0.48 },
+      "quality": 0.45,
+      "source": "https://www.cloudcarbonfootprint.org/docs/methodology",
+      "notes": "Arm server cores draw less power per vCPU than x86, but no vendor-published figure exists for the exact GitHub host, so the range is deliberately wide."
+    },
+    {
+      "runnerClass": "windows-x64",
+      "vcpus": 2,
+      "memoryGb": 7,
+      "idleWatts": { "min": 2.0, "mode": 3.2, "max": 4.2 },
+      "peakWatts": { "min": 8.0, "mode": 11.5, "max": 16.0 },
+      "memoryWattsPerGb": { "min": 0.3, "mode": 0.3925, "max": 0.5 },
+      "quality": 0.5,
+      "source": "https://www.cloudcarbonfootprint.org/docs/methodology",
+      "notes": "Same underlying x86 host family as the Linux runner with a higher baseline operating-system overhead."
+    },
+    {
+      "runnerClass": "macos-arm64",
+      "vcpus": 3,
+      "memoryGb": 14,
+      "idleWatts": { "min": 3.0, "mode": 5.0, "max": 7.5 },
+      "peakWatts": { "min": 14.0, "mode": 22.0, "max": 32.0 },
+      "memoryWattsPerGb": { "min": 0.15, "mode": 0.25, "max": 0.35 },
+      "quality": 0.4,
+      "source": "https://www.cloudcarbonfootprint.org/docs/methodology",
+      "notes": "Apple-silicon hosts are not covered by public cloud power studies; the estimate is a wide envelope and the data-quality score reflects that."
+    },
+    {
+      "runnerClass": "macos-x64",
+      "vcpus": 4,
+      "memoryGb": 14,
+      "idleWatts": { "min": 6.0, "mode": 10.0, "max": 15.0 },
+      "peakWatts": { "min": 30.0, "mode": 45.0, "max": 62.0 },
+      "memoryWattsPerGb": { "min": 0.3, "mode": 0.3925, "max": 0.5 },
+      "quality": 0.4,
+      "source": "https://www.cloudcarbonfootprint.org/docs/methodology",
+      "notes": "Intel Mac hosts are dedicated rather than shared, so the attributable power envelope is much larger than for a shared Linux virtual machine."
+    }
+  ]
+}

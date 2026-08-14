@@ -1,0 +1,532 @@
+{
+  "identity": {
+    "owner": "greenci",
+    "repository": "demo",
+    "workflowId": 4242,
+    "workflowPath": ".github/workflows/ci.yml",
+    "runId": 900100,
+    "runAttempt": 1,
+    "headSha": "0000000000000000000000000000000000000001",
+    "headBranch": "feature/slow-tests",
+    "baseBranch": "main",
+    "event": "pull_request",
+    "pullRequestNumber": 12,
+    "repositoryVisibility": "private"
+  },
+  "generatedAt": "2026-08-10T00:10:00.000Z",
+  "config": {
+    "version": 1,
+    "carbon": { "region": "KR", "simulation-samples": 2000 }
+  },
+  "jobs": [
+    {
+      "id": 1,
+      "apiName": "Build",
+      "runnerLabels": ["ubuntu-latest"],
+      "runnerClass": "linux-x64",
+      "startedAt": "2026-08-10T00:00:00.000Z",
+      "completedAt": "2026-08-10T00:01:00.000Z",
+      "conclusion": "success",
+      "steps": [
+        {
+          "index": 1,
+          "name": "Install dependencies",
+          "normalizedName": "install dependencies",
+          "startedAt": "2026-08-10T00:00:00.000Z",
+          "completedAt": "2026-08-10T00:00:40.000Z",
+          "conclusion": "success",
+          "isRunnerInternal": false
+        },
+        {
+          "index": 2,
+          "name": "Build",
+          "normalizedName": "build",
+          "startedAt": "2026-08-10T00:00:40.000Z",
+          "completedAt": "2026-08-10T00:01:00.000Z",
+          "conclusion": "success",
+          "isRunnerInternal": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "apiName": "Test",
+      "runnerLabels": ["ubuntu-latest"],
+      "runnerClass": "linux-x64",
+      "startedAt": "2026-08-10T00:00:00.000Z",
+      "completedAt": "2026-08-10T00:03:00.000Z",
+      "conclusion": "success",
+      "steps": [
+        {
+          "index": 1,
+          "name": "Install dependencies",
+          "normalizedName": "install dependencies",
+          "startedAt": "2026-08-10T00:00:00.000Z",
+          "completedAt": "2026-08-10T00:00:40.000Z",
+          "conclusion": "success",
+          "isRunnerInternal": false
+        },
+        {
+          "index": 2,
+          "name": "Integration tests",
+          "normalizedName": "integration tests",
+          "startedAt": "2026-08-10T00:00:40.000Z",
+          "completedAt": "2026-08-10T00:03:00.000Z",
+          "conclusion": "success",
+          "isRunnerInternal": false
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "apiName": "Lint",
+      "runnerLabels": ["ubuntu-latest"],
+      "runnerClass": "linux-x64",
+      "startedAt": "2026-08-10T00:00:00.000Z",
+      "completedAt": "2026-08-10T00:00:30.000Z",
+      "conclusion": "success",
+      "steps": [
+        {
+          "index": 1,
+          "name": "Lint",
+          "normalizedName": "lint",
+          "startedAt": "2026-08-10T00:00:00.000Z",
+          "completedAt": "2026-08-10T00:00:30.000Z",
+          "conclusion": "success",
+          "isRunnerInternal": false
+        }
+      ]
+    }
+  ],
+  "baseline": {
+    "available": true,
+    "branch": "main",
+    "samples": [
+      {
+        "runId": 900001,
+        "runAttempt": 1,
+        "headSha": "0000000000000000000000000000000000000011",
+        "jobs": [
+          {
+            "id": 11,
+            "apiName": "Build",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-09T00:00:00.000Z",
+            "completedAt": "2026-08-09T00:01:00.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Install dependencies",
+                "normalizedName": "install dependencies",
+                "startedAt": "2026-08-09T00:00:00.000Z",
+                "completedAt": "2026-08-09T00:00:40.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "Build",
+                "normalizedName": "build",
+                "startedAt": "2026-08-09T00:00:40.000Z",
+                "completedAt": "2026-08-09T00:01:00.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 12,
+            "apiName": "Test",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-09T00:00:00.000Z",
+            "completedAt": "2026-08-09T00:01:10.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Install dependencies",
+                "normalizedName": "install dependencies",
+                "startedAt": "2026-08-09T00:00:00.000Z",
+                "completedAt": "2026-08-09T00:00:40.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "Integration tests",
+                "normalizedName": "integration tests",
+                "startedAt": "2026-08-09T00:00:40.000Z",
+                "completedAt": "2026-08-09T00:01:10.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 13,
+            "apiName": "Lint",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-09T00:00:00.000Z",
+            "completedAt": "2026-08-09T00:00:30.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Lint",
+                "normalizedName": "lint",
+                "startedAt": "2026-08-09T00:00:00.000Z",
+                "completedAt": "2026-08-09T00:00:30.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "runId": 900002,
+        "runAttempt": 1,
+        "headSha": "0000000000000000000000000000000000000012",
+        "jobs": [
+          {
+            "id": 21,
+            "apiName": "Build",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-08T00:00:00.000Z",
+            "completedAt": "2026-08-08T00:01:02.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Install dependencies",
+                "normalizedName": "install dependencies",
+                "startedAt": "2026-08-08T00:00:00.000Z",
+                "completedAt": "2026-08-08T00:00:41.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "Build",
+                "normalizedName": "build",
+                "startedAt": "2026-08-08T00:00:41.000Z",
+                "completedAt": "2026-08-08T00:01:02.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 22,
+            "apiName": "Test",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-08T00:00:00.000Z",
+            "completedAt": "2026-08-08T00:01:08.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Install dependencies",
+                "normalizedName": "install dependencies",
+                "startedAt": "2026-08-08T00:00:00.000Z",
+                "completedAt": "2026-08-08T00:00:40.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "Integration tests",
+                "normalizedName": "integration tests",
+                "startedAt": "2026-08-08T00:00:40.000Z",
+                "completedAt": "2026-08-08T00:01:08.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 23,
+            "apiName": "Lint",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-08T00:00:00.000Z",
+            "completedAt": "2026-08-08T00:00:31.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Lint",
+                "normalizedName": "lint",
+                "startedAt": "2026-08-08T00:00:00.000Z",
+                "completedAt": "2026-08-08T00:00:31.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "runId": 900003,
+        "runAttempt": 1,
+        "headSha": "0000000000000000000000000000000000000013",
+        "jobs": [
+          {
+            "id": 31,
+            "apiName": "Build",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-07T00:00:00.000Z",
+            "completedAt": "2026-08-07T00:00:59.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Install dependencies",
+                "normalizedName": "install dependencies",
+                "startedAt": "2026-08-07T00:00:00.000Z",
+                "completedAt": "2026-08-07T00:00:39.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "Build",
+                "normalizedName": "build",
+                "startedAt": "2026-08-07T00:00:39.000Z",
+                "completedAt": "2026-08-07T00:00:59.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 32,
+            "apiName": "Test",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-07T00:00:00.000Z",
+            "completedAt": "2026-08-07T00:01:12.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Install dependencies",
+                "normalizedName": "install dependencies",
+                "startedAt": "2026-08-07T00:00:00.000Z",
+                "completedAt": "2026-08-07T00:00:41.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "Integration tests",
+                "normalizedName": "integration tests",
+                "startedAt": "2026-08-07T00:00:41.000Z",
+                "completedAt": "2026-08-07T00:01:12.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 33,
+            "apiName": "Lint",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-07T00:00:00.000Z",
+            "completedAt": "2026-08-07T00:00:29.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Lint",
+                "normalizedName": "lint",
+                "startedAt": "2026-08-07T00:00:00.000Z",
+                "completedAt": "2026-08-07T00:00:29.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "runId": 900004,
+        "runAttempt": 1,
+        "headSha": "0000000000000000000000000000000000000014",
+        "jobs": [
+          {
+            "id": 41,
+            "apiName": "Build",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-06T00:00:00.000Z",
+            "completedAt": "2026-08-06T00:01:01.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Install dependencies",
+                "normalizedName": "install dependencies",
+                "startedAt": "2026-08-06T00:00:00.000Z",
+                "completedAt": "2026-08-06T00:00:40.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "Build",
+                "normalizedName": "build",
+                "startedAt": "2026-08-06T00:00:40.000Z",
+                "completedAt": "2026-08-06T00:01:01.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 42,
+            "apiName": "Test",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-06T00:00:00.000Z",
+            "completedAt": "2026-08-06T00:03:30.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Install dependencies",
+                "normalizedName": "install dependencies",
+                "startedAt": "2026-08-06T00:00:00.000Z",
+                "completedAt": "2026-08-06T00:00:40.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "Integration tests",
+                "normalizedName": "integration tests",
+                "startedAt": "2026-08-06T00:00:40.000Z",
+                "completedAt": "2026-08-06T00:03:30.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 43,
+            "apiName": "Lint",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-06T00:00:00.000Z",
+            "completedAt": "2026-08-06T00:00:30.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Lint",
+                "normalizedName": "lint",
+                "startedAt": "2026-08-06T00:00:00.000Z",
+                "completedAt": "2026-08-06T00:00:30.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "runId": 900005,
+        "runAttempt": 1,
+        "headSha": "0000000000000000000000000000000000000015",
+        "jobs": [
+          {
+            "id": 51,
+            "apiName": "Build",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-05T00:00:00.000Z",
+            "completedAt": "2026-08-05T00:01:00.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Install dependencies",
+                "normalizedName": "install dependencies",
+                "startedAt": "2026-08-05T00:00:00.000Z",
+                "completedAt": "2026-08-05T00:00:40.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "Build",
+                "normalizedName": "build",
+                "startedAt": "2026-08-05T00:00:40.000Z",
+                "completedAt": "2026-08-05T00:01:00.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 52,
+            "apiName": "Test",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-05T00:00:00.000Z",
+            "completedAt": "2026-08-05T00:01:09.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Install dependencies",
+                "normalizedName": "install dependencies",
+                "startedAt": "2026-08-05T00:00:00.000Z",
+                "completedAt": "2026-08-05T00:00:40.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              },
+              {
+                "index": 2,
+                "name": "Integration tests",
+                "normalizedName": "integration tests",
+                "startedAt": "2026-08-05T00:00:40.000Z",
+                "completedAt": "2026-08-05T00:01:09.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          },
+          {
+            "id": 53,
+            "apiName": "Lint",
+            "runnerLabels": ["ubuntu-latest"],
+            "runnerClass": "linux-x64",
+            "startedAt": "2026-08-05T00:00:00.000Z",
+            "completedAt": "2026-08-05T00:00:30.000Z",
+            "conclusion": "success",
+            "steps": [
+              {
+                "index": 1,
+                "name": "Lint",
+                "normalizedName": "lint",
+                "startedAt": "2026-08-05T00:00:00.000Z",
+                "completedAt": "2026-08-05T00:00:30.000Z",
+                "conclusion": "success",
+                "isRunnerInternal": false
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

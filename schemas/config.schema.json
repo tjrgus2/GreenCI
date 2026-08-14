@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://greenci.dev/schemas/config.schema.json",
+  "title": "GreenCI Repository Configuration",
+  "type": "object",
+  "properties": {
+    "version": { "default": 1, "type": "number", "const": 1 },
+    "locale": { "default": "en", "type": "string", "enum": ["en", "ko"] },
+    "report": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "pr-comment": { "default": true, "type": "boolean" },
+        "job-summary": { "default": true, "type": "boolean" },
+        "update-existing-comment": { "default": true, "type": "boolean" },
+        "top-hotspots": {
+          "default": 5,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        }
+      },
+      "additionalProperties": false
+    },
+    "baseline": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "branch": { "type": "string", "minLength": 1, "maxLength": 255 },
+        "successful-runs": {
+          "default": 7,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "max-runs": {
+          "default": 20,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "minimum-samples": {
+          "default": 3,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "workflow-shape-threshold": {
+          "default": 0.8,
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "statistics": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "method": {
+              "default": "median-mad",
+              "type": "string",
+              "const": "median-mad"
+            },
+            "regression-percent": {
+              "default": 15,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "modified-z-score": {
+              "default": 3.5,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "analysis": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "exclude-current-job": { "default": true, "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "carbon": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "enabled": { "default": true, "type": "boolean" },
+        "region": {
+          "default": "GLOBAL",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,32}$"
+        },
+        "model": {
+          "default": "operational-v1",
+          "type": "string",
+          "const": "operational-v1"
+        },
+        "simulation-samples": {
+          "default": 2000,
+          "type": "integer",
+          "minimum": 200,
+          "maximum": 20000
+        },
+        "pue": {
+          "default": { "min": 1.1, "mode": 1.2, "max": 1.35 },
+          "type": "object",
+          "properties": {
+            "min": { "type": "number" },
+            "mode": { "type": "number" },
+            "max": { "type": "number" }
+          },
+          "required": ["min", "mode", "max"],
+          "additionalProperties": false
+        },
+        "utilization": {
+          "default": { "min": 0.35, "mode": 0.65, "max": 0.95 },
+          "type": "object",
+          "properties": {
+            "min": { "type": "number" },
+            "mode": { "type": "number" },
+            "max": { "type": "number" }
+          },
+          "required": ["min", "mode", "max"],
+          "additionalProperties": false
+        },
+        "show-uncertainty": { "default": true, "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "cost": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "enabled": { "default": true, "type": "boolean" },
+        "show-public-runner-equivalent": { "default": true, "type": "boolean" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
