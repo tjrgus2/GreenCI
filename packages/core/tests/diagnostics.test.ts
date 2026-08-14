@@ -220,6 +220,36 @@ describe('failure log parsers', () => {
     expect(parse(repeated).diagnostics).toHaveLength(1);
   });
 
+  it('reports one diagnostic per location even when the text differs', () => {
+    const nearlyIdentical = [
+      'src/app.ts(12,5): error TS2345: same problem"',
+      'src/app.ts(12,5): error TS2345: same problem',
+    ].join('\n');
+    expect(parse(nearlyIdentical).diagnostics).toHaveLength(1);
+  });
+
+  it('ignores the command-echo block GitHub prints before a run step', () => {
+    const log = [
+      '##[group]Run |',
+      '  echo "src/phantom.ts(1,1): error TS2345: only in the script source"',
+      '  exit 1',
+      '##[endgroup]',
+      'src/real.ts(9,2): error TS2322: printed by the step',
+    ].join('\n');
+    const result = parse(log);
+    expect(result.diagnostics.map((entry) => entry.file)).toEqual([
+      'src/real.ts',
+    ]);
+  });
+
+  it('keeps output when a group is never closed', () => {
+    const log = [
+      '##[group]Run echo hi',
+      '  echo "src/phantom.ts(1,1): error TS2345: swallowed"',
+    ].join('\n');
+    expect(parse(log).diagnostics).toEqual([]);
+  });
+
   it('isolates a parser that throws', () => {
     const result = parseFailureLog(
       'anything',

@@ -43,6 +43,31 @@ export function redactSecrets(value: string): string {
 }
 
 /**
+ * Drop the `##[group]Run …` block GitHub emits before a `run:` step.
+ *
+ * That block echoes the *script source*, so parsing it produces a phantom
+ * diagnostic for every diagnostic the script later prints.
+ */
+export function stripCommandEcho(lines: readonly string[]): string[] {
+  const kept: string[] = [];
+  let insideCommandEcho = false;
+  for (const line of lines) {
+    if (/^##\[group\]Run\b/u.test(line)) {
+      insideCommandEcho = true;
+      continue;
+    }
+    if (insideCommandEcho) {
+      if (/^##\[endgroup\]/u.test(line)) {
+        insideCommandEcho = false;
+      }
+      continue;
+    }
+    kept.push(line);
+  }
+  return kept;
+}
+
+/**
  * Full sanitization pipeline for a single reported line: decolour, strip the
  * runner timestamp, remove control characters, redact credentials, and bound
  * the length. Markdown escaping happens later, at render time.
