@@ -28,8 +28,7 @@ twenty commits back.
 GreenCI runs as a job inside your workflow and reports what the current pull
 request changed. It reads the Actions API — the run, its jobs and steps, the
 workflow file, and your recent successful runs on the base branch — then compares
-this run against the median and MAD of that history. It never checks out your
-code and sends nothing anywhere except back to the GitHub API it read from.
+this run against the median and MAD of that history.
 
 The hard part isn't measuring; it's knowing which job to fix. The job that delays
 your merge and the job that eats your runner minutes are often different jobs, so
@@ -228,18 +227,20 @@ and a new one is a reasonable first contribution.
 
 ## Security
 
-- No GreenCI server, database, or account. The only outbound destination is the
-  GitHub API of the repository being analyzed.
-- No telemetry, no analytics, no LLM call, no source upload.
-- The analyzer never checks out or executes pull-request code, never passes
-  repository-controlled strings to a shell, and never uses `eval`.
+The whole design follows from one decision: GreenCI reads metadata and never
+handles your code. There is no GreenCI service to send anything to.
+
+- Outbound traffic goes to exactly one place: the GitHub API of the repository
+  being analyzed. No telemetry, no analytics, no model API.
+- The analyzer works from the Actions API alone. It does not check out the pull
+  request, pass repository-controlled strings to a shell, or use `eval`.
 - `.greenci.yml`, the workflow file, artifacts, and logs are untrusted input:
   size-bounded, alias-free YAML, schema-validated, escaped.
 - Artifacts go through GreenCI's own in-memory ZIP reader, which rejects zip slip,
   absolute paths, symlinks, oversized members, and compression bombs before
   allocating.
-- Failed-log parsing is off by default. Enabled, it's bounded, credential-redacted,
-  processed in memory, and never written to disk.
+- Failed-log parsing is off by default. Enabled, it stays in memory, bounded and
+  credential-redacted, and is never written to disk.
 - Permissions: `actions: read`, `contents: read`, and optionally
   `pull-requests: write`.
 
@@ -374,7 +375,7 @@ recommendations:
 
 ## Run it locally
 
-No network, no token, no GitHub:
+Replay a committed fixture offline, no GitHub involved:
 
 ```bash
 pnpm install && pnpm build
