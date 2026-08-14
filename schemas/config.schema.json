@@ -112,6 +112,26 @@
           },
           "additionalProperties": false
         },
+        "what-if": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "enabled": { "default": true, "type": "boolean" },
+            "speedup-percent": {
+              "default": 50,
+              "type": "number",
+              "minimum": 1,
+              "maximum": 95
+            },
+            "max-scenarios": {
+              "default": 2,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5
+            }
+          },
+          "additionalProperties": false
+        },
         "failure-logs": {
           "default": {},
           "type": "object",

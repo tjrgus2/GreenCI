@@ -14,7 +14,11 @@ import {
   truncate,
 } from './format.js';
 import { createTranslator } from './i18n/index.js';
-import { renderPolicyBadge, renderRecommendationsSection } from './sections.js';
+import {
+  renderPolicyBadge,
+  renderRecommendationsSection,
+  renderWhatIfBrief,
+} from './sections.js';
 
 export { REPORT_MARKER_PREFIX, reportMarker } from './common.js';
 
@@ -71,6 +75,10 @@ export function renderPullRequestComment(
     ...renderRegressionTable(report, translate, limit),
     '',
     ...renderCriticalPathBrief(report, translate),
+    ...(report.whatIf.available
+      ? [`**${translate('section.whatIf')}**`, '']
+      : []),
+    ...renderWhatIfBrief(report, translate),
     ...renderRecommendationsSection(report, translate, {
       withEvidence: false,
       limit,

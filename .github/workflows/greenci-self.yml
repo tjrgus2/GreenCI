@@ -1,0 +1,115 @@
+name: GreenCI self-analysis
+
+# GreenCI analyzing GreenCI. This is deliberately a separate, non-blocking
+# workflow so that a self-referential failure can never gate a pull request.
+#
+# It runs only on push to the default branch and on manual dispatch, never on
+# `pull_request`. The analyzer job resolves the Action with `uses: ./`, which
+# requires a checkout; on a fork pull request that checkout would be untrusted
+# contributor code, and the analyzer must never execute untrusted code.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: greenci-self-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - run: corepack enable pnpm
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: pnpm install
+        run: pnpm install --frozen-lockfile
+      - name: Build the workspace
+        run: pnpm build
+
+  test:
+    name: Test
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - run: corepack enable pnpm
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: pnpm install
+        run: pnpm install --frozen-lockfile
+      - name: Tests with coverage
+        run: pnpm test:coverage
+
+  lint:
+    name: Lint
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - run: corepack enable pnpm
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: pnpm install
+        run: pnpm install --frozen-lockfile
+      - name: Lint and type check
+        run: pnpm lint && pnpm typecheck
+
+  greenci:
+    name: GreenCI
+    if: always()
+    needs: [build, test, lint]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      actions: read
+      contents: read
+
+    steps:
+      - name: Checkout the Action
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Analyze this workflow with the committed bundle
+        id: greenci
+        # Never block the default branch on GreenCI's own analysis.
+        continue-on-error: true
+        uses: ./
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summarize the self-analysis
+        if: always()
+        env:
+          RUNNER_SECONDS: ${{ steps.greenci.outputs.runner-seconds }}
+          CARBON: ${{ steps.greenci.outputs.carbon-p50-grams }}
+          LIST_PRICE: ${{ steps.greenci.outputs.list-price-usd }}
+          CRITICAL_PATH: ${{ steps.greenci.outputs.critical-path-seconds }}
+          RECOMMENDATIONS: ${{ steps.greenci.outputs.recommendation-count }}
+          POLICY: ${{ steps.greenci.outputs.policy-conclusion }}
+        run: |
+          set -euo pipefail
+          printf 'runner_seconds=%s carbon_p50_g=%s list_price_usd=%s critical_path_seconds=%s recommendations=%s policy=%s\n' \
+            "${RUNNER_SECONDS:-n/a}" "${CARBON:-n/a}" "${LIST_PRICE:-n/a}" \
+            "${CRITICAL_PATH:-n/a}" "${RECOMMENDATIONS:-n/a}" "${POLICY:-n/a}"

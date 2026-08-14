@@ -9,43 +9,43 @@ importers:
   .:
     devDependencies:
       '@eslint/js':
-        specifier: latest
+        specifier: ^10.0.1
         version: 10.0.1(eslint@10.8.1)
       '@greenci/core':
         specifier: workspace:*
         version: link:packages/core
       '@types/node':
-        specifier: latest
+        specifier: ^26.2.0
         version: 26.2.0
       '@vitest/coverage-v8':
-        specifier: latest
+        specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
       ajv:
-        specifier: latest
+        specifier: ^8.20.0
         version: 8.20.0
       eslint:
-        specifier: latest
+        specifier: ^10.8.1
         version: 10.8.1
       fast-check:
-        specifier: latest
+        specifier: ^4.9.0
         version: 4.9.0
       prettier:
-        specifier: latest
+        specifier: ^3.9.6
         version: 3.9.6
       tsx:
-        specifier: latest
+        specifier: ^4.23.12
         version: 4.23.12
       typescript:
         specifier: 6.0.3
         version: 6.0.3
       typescript-eslint:
-        specifier: latest
+        specifier: ^8.67.0
         version: 8.67.0(eslint@10.8.1)(typescript@6.0.3)
       vitest:
-        specifier: latest
+        specifier: ^4.1.10
         version: 4.1.10(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(vite@8.1.5(@types/node@26.2.0)(esbuild@0.28.1)(tsx@4.23.12)(yaml@2.9.0))
       zod:
-        specifier: latest
+        specifier: ^4.4.3
         version: 4.4.3
 
   packages/cli:
@@ -54,7 +54,7 @@ importers:
         specifier: workspace:*
         version: link:../core
       commander:
-        specifier: latest
+        specifier: ^15.0.0
         version: 15.0.0
 
   packages/core:
@@ -63,32 +63,32 @@ importers:
         specifier: ^5.10.1
         version: 5.10.1
       zod:
-        specifier: latest
+        specifier: ^4.4.3
         version: 4.4.3
 
   packages/github-action:
     dependencies:
       '@actions/artifact':
-        specifier: latest
+        specifier: ^6.2.1
         version: 6.2.1
       '@actions/core':
-        specifier: latest
+        specifier: ^3.0.1
         version: 3.0.1
       '@actions/github':
-        specifier: latest
+        specifier: ^9.1.1
         version: 9.1.1
       '@greenci/core':
         specifier: workspace:*
         version: link:../core
       yaml:
-        specifier: latest
+        specifier: ^2.9.0
         version: 2.9.0
       zod:
-        specifier: latest
+        specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
       '@vercel/ncc':
-        specifier: latest
+        specifier: ^0.45.0
         version: 0.45.0
 
 packages:

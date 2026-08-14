@@ -6,6 +6,7 @@ import {
   formatGrams,
   formatNumber,
   formatRatio,
+  formatSignedPercent,
   formatUsd,
   renderTable,
   truncate,
@@ -105,6 +106,118 @@ export function renderCriticalPathSection(
     ),
     '',
     `_${translate('criticalPath.waiting')}_`,
+  ];
+}
+
+function counterfactualRows(
+  result: AnalysisReport['whatIf']['results'][number],
+  translate: Translator,
+): string[][] {
+  const rows: string[][] = [];
+  const push = (
+    labelKey: MessageKey,
+    entry: { before: number; after: number; changePercent: number } | undefined,
+    format: (value: number) => string,
+  ): void => {
+    if (entry === undefined) {
+      return;
+    }
+    rows.push([
+      translate(labelKey),
+      format(entry.before),
+      format(entry.after),
+      formatSignedPercent(entry.changePercent),
+    ]);
+  };
+  push('whatIf.criticalPath', result.criticalPathSeconds, (value) =>
+    formatDuration(value),
+  );
+  push('whatIf.runnerTime', result.runnerSeconds, (value) =>
+    formatDuration(value),
+  );
+  push('whatIf.listPrice', result.listPriceUsd, (value) => formatUsd(value));
+  push('whatIf.carbon', result.carbonP50Grams, (value) => formatGrams(value));
+  return rows;
+}
+
+/**
+ * Counterfactual estimates, framed so a reader cannot mistake them for
+ * measured savings.
+ */
+export function renderWhatIfSection(
+  report: AnalysisReport,
+  translate: Translator,
+): string[] {
+  const whatIf = report.whatIf;
+  const heading = `## ${translate('section.whatIf')}`;
+  if (!whatIf.available || whatIf.results.length === 0) {
+    return [heading, '', `_${translate('whatIf.unavailable')}_`];
+  }
+  const lines: string[] = [heading, ''];
+  for (const result of whatIf.results) {
+    const percent = `${formatNumber(result.speedupPercent, 0)}%`;
+    lines.push(
+      `### ${translate('whatIf.scenario')}: \`${escapeMarkdown(truncate(result.targetLabel, 60))}\` −${percent}`,
+      '',
+      translate(
+        result.onCriticalPath
+          ? 'whatIf.onCriticalPath'
+          : 'whatIf.offCriticalPath',
+        {
+          target: `\`${escapeMarkdown(truncate(result.targetLabel, 60))}\``,
+          percent,
+        },
+      ),
+      '',
+      ...renderTable(
+        [
+          translate('table.metric'),
+          translate('table.baseline'),
+          translate('table.current'),
+          translate('table.change'),
+        ],
+        ['left', 'right', 'right', 'right'],
+        counterfactualRows(result, translate),
+      ),
+      '',
+    );
+    if (result.method === 'runner-only') {
+      lines.push(`_${translate('whatIf.runnerOnly')}_`, '');
+    }
+  }
+  lines.push(`_${escapeMarkdown(whatIf.disclaimer)}_`);
+  return lines;
+}
+
+/**
+ * One compact counterfactual line per scenario, for the pull-request comment.
+ * A scenario on the critical path reports the wait change; one off it reports
+ * only what it frees.
+ */
+export function renderWhatIfBrief(
+  report: AnalysisReport,
+  translate: Translator,
+): string[] {
+  const results = report.whatIf.results;
+  if (!report.whatIf.available || results.length === 0) {
+    return [];
+  }
+  return [
+    ...results.map((result) => {
+      const target = `\`${escapeMarkdown(truncate(result.targetLabel, 40))}\``;
+      const percent = `${formatNumber(result.speedupPercent, 0)}%`;
+      const parts = [
+        result.criticalPathSeconds === undefined
+          ? undefined
+          : `${translate('whatIf.criticalPath')} ${formatSignedPercent(result.criticalPathSeconds.changePercent)}`,
+        `${translate('whatIf.runnerTime')} ${formatSignedPercent(result.runnerSeconds.changePercent)}`,
+        result.carbonP50Grams === undefined
+          ? undefined
+          : `${translate('whatIf.carbon')} ${formatSignedPercent(result.carbonP50Grams.changePercent)}`,
+      ].filter((part): part is string => part !== undefined);
+      return `- ${target} −${percent} → ${parts.join(' · ')}`;
+    }),
+    '',
   ];
 }
 

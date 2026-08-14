@@ -1,0 +1,21 @@
+# Default owner for everything.
+*                                   @tjrgus2
+
+# Anything that can change what a release contains, what it is built from, or
+# what permissions it runs with requires an explicit review.
+/.github/workflows/                 @tjrgus2
+/.github/dependabot.yml             @tjrgus2
+/.github/CODEOWNERS                 @tjrgus2
+/action.yml                         @tjrgus2
+/packages/github-action/dist/       @tjrgus2
+
+# Datasets change every published cost and carbon number.
+/data/                              @tjrgus2
+
+# The published report and configuration contracts.
+/schemas/                           @tjrgus2
+
+# Security posture and its documentation.
+/SECURITY.md                        @tjrgus2
+/docs/security-model.md             @tjrgus2
+/docs/methodology.md                @tjrgus2

@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/tjrgus2/GreenCI/security/advisories/new
+    about: Report privately. Do not open a public issue, and do not attach unredacted CI logs.
+  - name: Methodology question
+    url: https://github.com/tjrgus2/GreenCI/blob/main/docs/methodology.md
+    about: How cost, carbon, regression, and critical-path figures are produced, and what GreenCI refuses to claim.

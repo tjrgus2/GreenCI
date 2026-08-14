@@ -1,0 +1,56 @@
+name: Dataset correction
+description: A runner price, runner power model, or carbon intensity value is wrong or missing
+labels: [data]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Every published cost and carbon number comes from a versioned dataset in
+        `data/`. A correction needs a citable source, because GreenCI reports the
+        source alongside the number.
+
+  - type: dropdown
+    id: dataset
+    attributes:
+      label: Dataset
+      options:
+        - github-pricing
+        - runner-models
+        - carbon-intensity
+    validations:
+      required: true
+
+  - type: input
+    id: subject
+    attributes:
+      label: Runner class or region
+      placeholder: windows-arm64
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: What GreenCI reports today
+      description: Include the warning code if GreenCI told you the value was unknown.
+
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed value
+    validations:
+      required: true
+
+  - type: input
+    id: source
+    attributes:
+      label: Citable source URL
+      description: Vendor documentation or a published dataset. GreenCI will print this in every report that uses the value.
+    validations:
+      required: true
+
+  - type: input
+    id: effective
+    attributes:
+      label: Effective date of the value
+      placeholder: 2026-07-01

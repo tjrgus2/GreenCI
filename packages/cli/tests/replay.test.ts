@@ -30,7 +30,7 @@ describe('fixture replay', () => {
     expect(result.report.parallelism.averageConcurrency).toBe(1.875);
     expect(result.report.jobs).toHaveLength(3);
     expect(await readFile(outputPath, 'utf8')).toContain(
-      '"schemaVersion": "1.2.0"',
+      '"schemaVersion": "1.3.0"',
     );
   });
 

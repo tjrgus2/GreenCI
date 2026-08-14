@@ -60,7 +60,7 @@ function permissionWarning(error: unknown): AnalysisWarning {
   return {
     code: 'PR_COMMENT_UNAVAILABLE',
     source: 'github-api',
-    message: `GreenCI could not write a pull-request comment (${describeError(error)}); the Job Summary and JSON report remain available.`,
+    message: `GreenCI could not write a pull-request comment (${describeError(error)}). Add \`pull-requests: write\` to the analyzer job's permissions, or accept that fork pull requests only receive the Job Summary. The Job Summary and JSON report remain available.`,
   };
 }
 

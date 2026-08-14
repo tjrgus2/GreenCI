@@ -1,6 +1,6 @@
 {
   "name": "@greenci/github-action",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "GreenCI GitHub JavaScript Action",
@@ -10,14 +10,14 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
-    "@actions/artifact": "latest",
-    "@actions/core": "latest",
-    "@actions/github": "latest",
+    "@actions/artifact": "^6.2.1",
+    "@actions/core": "^3.0.1",
+    "@actions/github": "^9.1.1",
     "@greenci/core": "workspace:*",
-    "yaml": "latest",
-    "zod": "latest"
+    "yaml": "^2.9.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@vercel/ncc": "latest"
+    "@vercel/ncc": "^0.45.0"
   }
 }

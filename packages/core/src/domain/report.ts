@@ -10,7 +10,7 @@ import {
 const DiagnosticsSchema = DiagnosticsReportSchema;
 
 /** Current schema version of `greenci-report.json`. */
-export const REPORT_SCHEMA_VERSION = '1.2.0';
+export const REPORT_SCHEMA_VERSION = '1.3.0';
 
 const finite = z.number().finite();
 const nonNegative = z.number().finite().nonnegative();
@@ -312,6 +312,33 @@ const PolicySchema = z
   })
   .strict();
 
+const WhatIfDeltaSchema = z
+  .object({ before: finite, after: finite, changePercent: finite })
+  .strict();
+
+const WhatIfSchema = z
+  .object({
+    available: z.boolean(),
+    method: z.enum(['dag', 'runner-only', 'unavailable']),
+    disclaimer: z.string().min(1),
+    results: z.array(
+      z
+        .object({
+          scenarioId: z.string().min(1),
+          targetLabel: z.string(),
+          speedupPercent: z.number().min(0).max(100),
+          onCriticalPath: z.boolean(),
+          method: z.enum(['dag', 'runner-only']),
+          criticalPathSeconds: WhatIfDeltaSchema.optional(),
+          runnerSeconds: WhatIfDeltaSchema,
+          listPriceUsd: WhatIfDeltaSchema.optional(),
+          carbonP50Grams: WhatIfDeltaSchema.optional(),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+
 const DataManifestEntrySchema = z
   .object({
     id: z.string().min(1),
@@ -346,6 +373,7 @@ export const AnalysisReportSchema = z
     shape: ShapeSchema,
     baseline: BaselineSchema,
     criticalPath: CriticalPathSchema,
+    whatIf: WhatIfSchema,
     failures: FailuresSchema,
     recommendations: z.array(RecommendationSchema),
     policy: PolicySchema,

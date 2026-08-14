@@ -97,6 +97,20 @@ export const ko: Messages = {
   'baseline.excludedShape': '구조 불일치로 제외한 실행 수',
   'baseline.fingerprint': '워크플로 구조 지문',
 
+  'section.whatIf': 'What if? (반사실 추정)',
+  'whatIf.unavailable': '이 실행에서는 추정할 수 있는 시나리오가 없습니다.',
+  'whatIf.scenario': '시나리오',
+  'whatIf.criticalPath': 'Critical Path',
+  'whatIf.runnerTime': '러너 시간',
+  'whatIf.listPrice': '정가 환산 비용',
+  'whatIf.carbon': '탄소 p50',
+  'whatIf.onCriticalPath':
+    '{target}은(는) Critical Path 위에 있으므로 {percent} 빨라지면 개발자 대기 시간이 줄어듭니다.',
+  'whatIf.offCriticalPath':
+    '{target}은(는) Critical Path 위에 없으므로 {percent} 빨라져도 대기 시간은 줄지 않고 러너 시간·비용·탄소만 절감됩니다.',
+  'whatIf.runnerOnly':
+    '워크플로 그래프를 사용할 수 없어 소요 시간에서 파생되는 지표만 추정했습니다.',
+
   'section.criticalPath': 'Critical Path',
   'section.hotspots': 'Critical Path 밖의 자원 소비 지점',
   'section.recommendations': '개선 제안',
