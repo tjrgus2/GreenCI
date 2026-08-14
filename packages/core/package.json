@@ -18,6 +18,7 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
+    "fast-xml-parser": "^5.10.1",
     "zod": "latest"
   }
 }

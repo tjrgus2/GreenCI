@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://greenci.dev/schemas/report-v1.schema.json",
-  "title": "GreenCI Report 1.1.0",
+  "title": "GreenCI Report 1.2.0",
   "type": "object",
   "properties": {
-    "schemaVersion": { "type": "string", "const": "1.1.0" },
+    "schemaVersion": { "type": "string", "const": "1.2.0" },
     "generatedAt": {
       "type": "string",
       "format": "date-time",
@@ -103,6 +103,11 @@
           "matrixSignature": { "type": "string" },
           "runnerLabels": { "type": "array", "items": { "type": "string" } },
           "runnerClass": { "type": "string" },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
           "startedAt": {
             "type": "string",
             "format": "date-time",
@@ -114,6 +119,7 @@
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
           },
           "durationSeconds": { "type": "number", "minimum": 0 },
+          "queueSeconds": { "type": "number", "minimum": 0 },
           "conclusion": {
             "type": "string",
             "enum": [
@@ -538,6 +544,209 @@
       ],
       "additionalProperties": false
     },
+    "criticalPath": {
+      "type": "object",
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": ["dag", "interval-fallback", "unavailable"]
+        },
+        "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+        "totalSeconds": { "type": "number", "minimum": 0 },
+        "wallClockSharePercent": { "type": "number", "minimum": 0 },
+        "path": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "label": { "type": "string" },
+              "durationSeconds": { "type": "number", "minimum": 0 },
+              "contributionPercent": { "type": "number", "minimum": 0 }
+            },
+            "required": [
+              "id",
+              "label",
+              "durationSeconds",
+              "contributionPercent"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "nonCriticalHotspots": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "label": { "type": "string" },
+              "runnerSeconds": { "type": "number", "minimum": 0 },
+              "runnerSharePercent": { "type": "number", "minimum": 0 }
+            },
+            "required": ["id", "label", "runnerSeconds", "runnerSharePercent"],
+            "additionalProperties": false
+          }
+        },
+        "reasons": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": [
+        "method",
+        "confidence",
+        "totalSeconds",
+        "wallClockSharePercent",
+        "path",
+        "nonCriticalHotspots",
+        "reasons"
+      ],
+      "additionalProperties": false
+    },
+    "failures": {
+      "type": "object",
+      "properties": {
+        "failedJobCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "firstFailureWallClockPercent": { "type": "number", "minimum": 0 },
+        "failures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "jobId": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "jobName": { "type": "string" },
+              "conclusion": { "type": "string" },
+              "durationSeconds": { "type": "number", "minimum": 0 },
+              "failedStepName": { "type": "string" },
+              "failedStepIndex": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "secondsBeforeFailure": { "type": "number", "minimum": 0 }
+            },
+            "required": ["jobId", "jobName", "conclusion"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["failedJobCount", "failures"],
+      "additionalProperties": false
+    },
+    "recommendations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ruleId": { "type": "string", "minLength": 1 },
+          "ruleVersion": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["info", "warning", "critical"]
+          },
+          "title": { "type": "string", "minLength": 1 },
+          "explanation": { "type": "string", "minLength": 1 },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "metric": { "type": "string", "minLength": 1 },
+                "observed": {
+                  "anyOf": [{ "type": "number" }, { "type": "string" }]
+                },
+                "baseline": {
+                  "anyOf": [{ "type": "number" }, { "type": "string" }]
+                },
+                "source": { "type": "string", "minLength": 1 }
+              },
+              "required": ["metric", "observed", "source"],
+              "additionalProperties": false
+            }
+          },
+          "estimatedImpact": {
+            "type": "object",
+            "properties": {
+              "runnerSeconds": { "type": "number", "minimum": 0 },
+              "costUsd": { "type": "number", "minimum": 0 },
+              "carbonGrams": { "type": "number", "minimum": 0 },
+              "upperBound": { "type": "boolean", "const": true }
+            },
+            "required": ["upperBound"],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "ruleId",
+          "ruleVersion",
+          "severity",
+          "title",
+          "explanation",
+          "confidence",
+          "evidence"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "policy": {
+      "type": "object",
+      "properties": {
+        "conclusion": {
+          "type": "string",
+          "enum": ["pass", "warn", "fail", "skipped"]
+        },
+        "evaluations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ruleId": { "type": "string", "minLength": 1 },
+              "metric": { "type": "string", "minLength": 1 },
+              "actual": { "type": "number" },
+              "operator": { "type": "string", "minLength": 1 },
+              "threshold": { "type": "number" },
+              "requestedMode": {
+                "type": "string",
+                "enum": ["report", "warn", "fail"]
+              },
+              "mode": { "type": "string", "enum": ["report", "warn", "fail"] },
+              "passed": { "type": "boolean" },
+              "evaluated": { "type": "boolean" },
+              "confidence": {
+                "type": "string",
+                "enum": ["high", "medium", "low"]
+              },
+              "explanation": { "type": "string", "minLength": 1 }
+            },
+            "required": [
+              "ruleId",
+              "metric",
+              "operator",
+              "threshold",
+              "requestedMode",
+              "mode",
+              "passed",
+              "evaluated",
+              "confidence",
+              "explanation"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["conclusion", "evaluations"],
+      "additionalProperties": false
+    },
     "cost": {
       "type": "object",
       "properties": {
@@ -712,6 +921,190 @@
       ],
       "additionalProperties": false
     },
+    "tests": {
+      "type": "object",
+      "properties": {
+        "artifact": { "type": "string", "minLength": 1 },
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "passed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "errored": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "skipped": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "durationSeconds": { "type": "number", "minimum": 0 },
+        "parsedFiles": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "truncated": { "type": "boolean" },
+        "slowestSuites": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "total": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "failed": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "durationSeconds": { "type": "number", "minimum": 0 }
+            },
+            "required": ["name", "total", "failed", "durationSeconds"],
+            "additionalProperties": false
+          }
+        },
+        "slowestCases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "suite": { "type": "string" },
+              "name": { "type": "string" },
+              "durationSeconds": { "type": "number", "minimum": 0 },
+              "status": {
+                "type": "string",
+                "enum": ["passed", "failed", "error", "skipped"]
+              },
+              "message": { "type": "string" }
+            },
+            "required": ["suite", "name", "durationSeconds", "status"],
+            "additionalProperties": false
+          }
+        },
+        "failedCases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "suite": { "type": "string" },
+              "name": { "type": "string" },
+              "durationSeconds": { "type": "number", "minimum": 0 },
+              "status": {
+                "type": "string",
+                "enum": ["passed", "failed", "error", "skipped"]
+              },
+              "message": { "type": "string" }
+            },
+            "required": ["suite", "name", "durationSeconds", "status"],
+            "additionalProperties": false
+          }
+        },
+        "rejections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": { "type": "string" },
+              "reason": { "type": "string" }
+            },
+            "required": ["path", "reason"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "artifact",
+        "total",
+        "passed",
+        "failed",
+        "errored",
+        "skipped",
+        "durationSeconds",
+        "parsedFiles",
+        "truncated",
+        "slowestSuites",
+        "slowestCases",
+        "failedCases",
+        "rejections"
+      ],
+      "additionalProperties": false
+    },
+    "diagnostics": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "jobsParsed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "annotationsEmitted": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "parserId": { "type": "string", "minLength": 1 },
+              "severity": {
+                "type": "string",
+                "enum": ["error", "warning", "notice"]
+              },
+              "message": { "type": "string" },
+              "file": { "type": "string" },
+              "line": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "column": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+              "fingerprint": { "type": "string", "minLength": 1 },
+              "jobName": { "type": "string" }
+            },
+            "required": [
+              "parserId",
+              "severity",
+              "message",
+              "confidence",
+              "fingerprint",
+              "jobName"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "enabled",
+        "jobsParsed",
+        "annotationsEmitted",
+        "diagnostics"
+      ],
+      "additionalProperties": false
+    },
     "dataManifest": {
       "type": "array",
       "items": {
@@ -770,7 +1163,14 @@
               "RUNNER_PRICE_UNKNOWN",
               "CARBON_REGION_UNKNOWN",
               "PR_COMMENT_UNAVAILABLE",
-              "PR_COMMENT_FAILED"
+              "PR_COMMENT_FAILED",
+              "WORKFLOW_DAG_UNAVAILABLE",
+              "CRITICAL_PATH_DEGRADED",
+              "RECOMMENDATION_RULE_FAILED",
+              "TEST_ARTIFACT_UNAVAILABLE",
+              "TEST_ARTIFACT_UNSAFE",
+              "FAILURE_LOG_UNAVAILABLE",
+              "FAILURE_LOG_TRUNCATED"
             ]
           },
           "source": {
@@ -797,6 +1197,10 @@
     "analyzerExclusion",
     "shape",
     "baseline",
+    "criticalPath",
+    "failures",
+    "recommendations",
+    "policy",
     "dataManifest",
     "warnings"
   ],

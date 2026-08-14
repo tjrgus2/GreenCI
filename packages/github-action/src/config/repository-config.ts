@@ -1,20 +1,13 @@
 import { parse } from 'yaml';
-import { z } from 'zod';
 import type { AnalysisWarning } from '@greenci/core';
-import { describeError, isNotFoundError } from '../adapters/errors.js';
+import {
+  fetchRepositoryFile,
+  type FileReference,
+} from '../adapters/content.js';
 import type { GitHubDataSource } from '../adapters/github.js';
 
 /** Hard limit on the configuration file GreenCI is willing to decode. */
 export const MAX_CONFIG_BYTES = 65_536;
-
-const FileContentSchema = z
-  .object({
-    type: z.literal('file'),
-    encoding: z.string(),
-    size: z.number().int().nonnegative(),
-    content: z.string(),
-  })
-  .passthrough();
 
 /** Raw repository configuration plus any non-fatal collection warnings. */
 export interface RepositoryConfigResult {
@@ -23,18 +16,21 @@ export interface RepositoryConfigResult {
 }
 
 /** Which configuration file to read, and at which immutable revision. */
-export interface RepositoryConfigReference {
-  readonly owner: string;
-  readonly repository: string;
-  readonly path: string;
-  readonly ref: string;
-}
+export type RepositoryConfigReference = FileReference;
 
 function unavailable(message: string): RepositoryConfigResult {
   return {
     raw: undefined,
     warnings: [{ code: 'CONFIG_UNAVAILABLE', source: 'github-api', message }],
   };
+}
+
+/**
+ * Parse untrusted YAML with aliases disabled so no repository can use an
+ * expansion payload as an amplification vector.
+ */
+export function parseSafeYaml(text: string): unknown {
+  return parse(text, { maxAliasCount: 0, merge: false });
 }
 
 /**
@@ -48,47 +44,33 @@ export async function loadRepositoryConfig(
   source: GitHubDataSource,
   reference: RepositoryConfigReference,
 ): Promise<RepositoryConfigResult> {
-  let raw: unknown;
-  try {
-    raw = await source.getFileContent(reference);
-  } catch (error: unknown) {
-    if (isNotFoundError(error)) {
-      return { raw: undefined, warnings: [] };
-    }
+  const file = await fetchRepositoryFile(source, reference, MAX_CONFIG_BYTES);
+  if (file.problem === 'not-found') {
+    return { raw: undefined, warnings: [] };
+  }
+  if (file.problem === 'unreadable') {
     return unavailable(
-      `The GreenCI configuration file could not be read (${describeError(error)}); bundled defaults are used.`,
+      `The GreenCI configuration file could not be read (${file.detail ?? 'unknown error'}); bundled defaults are used.`,
     );
   }
-
-  const parsed = FileContentSchema.safeParse(raw);
-  if (!parsed.success) {
+  if (file.problem === 'not-a-file') {
     return unavailable(
       'The configuration path did not resolve to a regular file; bundled defaults are used.',
     );
   }
-  if (parsed.data.size > MAX_CONFIG_BYTES) {
+  if (file.problem === 'too-large') {
     return unavailable(
       `The GreenCI configuration file exceeds the ${MAX_CONFIG_BYTES}-byte limit; bundled defaults are used.`,
     );
   }
-  if (parsed.data.encoding !== 'base64') {
+  if (file.problem === 'unsupported-encoding' || file.text === undefined) {
     return unavailable(
       'The GreenCI configuration file used an unsupported content encoding; bundled defaults are used.',
     );
   }
 
-  const decoded = Buffer.from(parsed.data.content, 'base64');
-  if (decoded.byteLength > MAX_CONFIG_BYTES) {
-    return unavailable(
-      `The decoded GreenCI configuration exceeds the ${MAX_CONFIG_BYTES}-byte limit; bundled defaults are used.`,
-    );
-  }
-
   try {
-    const document: unknown = parse(decoded.toString('utf8'), {
-      maxAliasCount: 0,
-      merge: false,
-    });
+    const document: unknown = parseSafeYaml(file.text);
     if (document === null || document === undefined) {
       return { raw: undefined, warnings: [] };
     }
@@ -106,14 +88,15 @@ export async function loadRepositoryConfig(
       };
     }
     return { raw: document, warnings: [] };
-  } catch (error: unknown) {
+  } catch {
     return {
       raw: undefined,
       warnings: [
         {
           code: 'CONFIG_INVALID',
           source: 'action',
-          message: `The GreenCI configuration file is not valid YAML (${describeError(error)}); bundled defaults are used.`,
+          message:
+            'The GreenCI configuration file is not valid YAML; bundled defaults are used.',
         },
       ],
     };

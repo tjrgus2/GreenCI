@@ -59,6 +59,9 @@ importers:
 
   packages/core:
     dependencies:
+      fast-xml-parser:
+        specifier: ^5.10.1
+        version: 5.10.1
       zod:
         specifier: latest
         version: 4.4.3

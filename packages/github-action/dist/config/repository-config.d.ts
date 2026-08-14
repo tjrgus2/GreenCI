@@ -1,4 +1,5 @@
 import type { AnalysisWarning } from '@greenci/core';
+import { type FileReference } from '../adapters/content.js';
 import type { GitHubDataSource } from '../adapters/github.js';
 /** Hard limit on the configuration file GreenCI is willing to decode. */
 export declare const MAX_CONFIG_BYTES = 65536;
@@ -8,12 +9,12 @@ export interface RepositoryConfigResult {
     readonly warnings: AnalysisWarning[];
 }
 /** Which configuration file to read, and at which immutable revision. */
-export interface RepositoryConfigReference {
-    readonly owner: string;
-    readonly repository: string;
-    readonly path: string;
-    readonly ref: string;
-}
+export type RepositoryConfigReference = FileReference;
+/**
+ * Parse untrusted YAML with aliases disabled so no repository can use an
+ * expansion payload as an amplification vector.
+ */
+export declare function parseSafeYaml(text: string): unknown;
 /**
  * Read `.greenci.yml` through the API at the analyzed revision.
  *

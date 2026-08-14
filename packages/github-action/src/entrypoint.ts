@@ -10,6 +10,23 @@ function createActionIO(): ActionIO {
     info: (message) => core.info(message),
     warning: (message) => core.warning(message),
     setOutput: (name, value) => core.setOutput(name, value),
+    setFailed: (message) => core.setFailed(message),
+    annotate: (annotation) => {
+      const properties = {
+        file: annotation.file,
+        startLine: annotation.line,
+        ...(annotation.column === undefined
+          ? {}
+          : { startColumn: annotation.column }),
+      };
+      if (annotation.severity === 'error') {
+        core.error(annotation.message, properties);
+      } else if (annotation.severity === 'warning') {
+        core.warning(annotation.message, properties);
+      } else {
+        core.notice(annotation.message, properties);
+      }
+    },
     async writeSummary(markdown) {
       await core.summary.addRaw(markdown).write();
     },

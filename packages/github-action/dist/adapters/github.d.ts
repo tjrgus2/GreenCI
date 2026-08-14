@@ -47,6 +47,21 @@ export interface GitHubDataSource {
         body: string;
     }): Promise<unknown>;
     getAuthenticatedLogin(): Promise<string | undefined>;
+    listArtifacts(parameters: {
+        owner: string;
+        repository: string;
+        runId: number;
+    }): Promise<unknown>;
+    downloadArtifact(parameters: {
+        owner: string;
+        repository: string;
+        artifactId: number;
+    }): Promise<ArrayBuffer>;
+    downloadJobLogs(parameters: {
+        owner: string;
+        repository: string;
+        jobId: number;
+    }): Promise<string>;
 }
 /** Input identifying the current workflow run in GitHub. */
 export interface CurrentRunReference {

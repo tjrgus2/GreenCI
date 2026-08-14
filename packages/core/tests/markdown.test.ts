@@ -369,6 +369,7 @@ describe('degraded and disabled rendering', () => {
       jobs: [...baselineJobs(100), analyzerJob],
       currentJobName: 'greenci',
       generatedAt: '2026-07-20T00:10:00.000Z',
+      workflowDefinition: { jobs: { build: {}, greenci: { needs: 'build' } } },
       baseline: {
         available: true,
         branch: 'main',

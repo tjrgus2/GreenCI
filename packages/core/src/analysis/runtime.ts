@@ -46,14 +46,23 @@ function withStepDuration(step: NormalizedStep): NormalizedStep {
   return { ...step, durationSeconds: calculated };
 }
 
-/** Recalculate available job and step durations from their timestamps. */
+/**
+ * Recalculate available job and step durations from their timestamps, and
+ * separate queue time from execution time so a scheduling delay is never
+ * reported as a code optimization opportunity.
+ */
 export function withCalculatedDurations(job: NormalizedJob): NormalizedJob {
   const durationSeconds = calculateDurationSeconds(
     job.startedAt,
     job.completedAt,
   );
-  const next = { ...job, steps: job.steps.map(withStepDuration) };
-  return durationSeconds === undefined ? next : { ...next, durationSeconds };
+  const queueSeconds = calculateDurationSeconds(job.createdAt, job.startedAt);
+  return {
+    ...job,
+    steps: job.steps.map(withStepDuration),
+    ...(durationSeconds === undefined ? {} : { durationSeconds }),
+    ...(queueSeconds === undefined ? {} : { queueSeconds }),
+  };
 }
 
 function validInterval(job: NormalizedJob): [number, number] | undefined {

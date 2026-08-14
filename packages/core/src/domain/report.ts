@@ -1,12 +1,16 @@
 import { z } from 'zod';
 import {
   AnalysisWarningSchema,
+  DiagnosticsReportSchema,
   NormalizedJobSchema,
+  TestReportSchema as TestsSchema,
   WorkflowRunIdentitySchema,
 } from './schemas.js';
 
+const DiagnosticsSchema = DiagnosticsReportSchema;
+
 /** Current schema version of `greenci-report.json`. */
-export const REPORT_SCHEMA_VERSION = '1.1.0';
+export const REPORT_SCHEMA_VERSION = '1.2.0';
 
 const finite = z.number().finite();
 const nonNegative = z.number().finite().nonnegative();
@@ -205,6 +209,109 @@ const CarbonSchema = z
   })
   .strict();
 
+const CriticalPathSchema = z
+  .object({
+    method: z.enum(['dag', 'interval-fallback', 'unavailable']),
+    confidence: ConfidenceSchema,
+    totalSeconds: nonNegative,
+    wallClockSharePercent: nonNegative,
+    path: z.array(
+      z
+        .object({
+          id: z.string(),
+          label: z.string(),
+          durationSeconds: nonNegative,
+          contributionPercent: nonNegative,
+        })
+        .strict(),
+    ),
+    nonCriticalHotspots: z.array(
+      z
+        .object({
+          id: z.string(),
+          label: z.string(),
+          runnerSeconds: nonNegative,
+          runnerSharePercent: nonNegative,
+        })
+        .strict(),
+    ),
+    reasons: z.array(z.string()),
+  })
+  .strict();
+
+const FailuresSchema = z
+  .object({
+    failedJobCount: z.number().int().nonnegative(),
+    firstFailureWallClockPercent: nonNegative.optional(),
+    failures: z.array(
+      z
+        .object({
+          jobId: z.number().int().nonnegative(),
+          jobName: z.string(),
+          conclusion: z.string(),
+          durationSeconds: nonNegative.optional(),
+          failedStepName: z.string().optional(),
+          failedStepIndex: z.number().int().nonnegative().optional(),
+          secondsBeforeFailure: nonNegative.optional(),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+
+const RecommendationSchema = z
+  .object({
+    ruleId: z.string().min(1),
+    ruleVersion: z.number().int().positive(),
+    severity: z.enum(['info', 'warning', 'critical']),
+    title: z.string().min(1),
+    explanation: z.string().min(1),
+    confidence: z.number().min(0).max(1),
+    evidence: z.array(
+      z
+        .object({
+          metric: z.string().min(1),
+          observed: z.union([finite, z.string()]),
+          baseline: z.union([finite, z.string()]).optional(),
+          source: z.string().min(1),
+        })
+        .strict(),
+    ),
+    estimatedImpact: z
+      .object({
+        runnerSeconds: nonNegative.optional(),
+        costUsd: nonNegative.optional(),
+        carbonGrams: nonNegative.optional(),
+        upperBound: z.literal(true),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
+
+const PolicySchema = z
+  .object({
+    conclusion: z.enum(['pass', 'warn', 'fail', 'skipped']),
+    evaluations: z.array(
+      z
+        .object({
+          ruleId: z.string().min(1),
+          metric: z.string().min(1),
+          actual: finite.optional(),
+          operator: z.string().min(1),
+          threshold: finite,
+          requestedMode: z.enum(['report', 'warn', 'fail']),
+          mode: z.enum(['report', 'warn', 'fail']),
+          passed: z.boolean(),
+          evaluated: z.boolean(),
+          confidence: ConfidenceSchema,
+          explanation: z.string().min(1),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+
 const DataManifestEntrySchema = z
   .object({
     id: z.string().min(1),
@@ -238,8 +345,14 @@ export const AnalysisReportSchema = z
     analyzerExclusion: ExclusionSchema,
     shape: ShapeSchema,
     baseline: BaselineSchema,
+    criticalPath: CriticalPathSchema,
+    failures: FailuresSchema,
+    recommendations: z.array(RecommendationSchema),
+    policy: PolicySchema,
     cost: CostSchema.optional(),
     carbon: CarbonSchema.optional(),
+    tests: TestsSchema.optional(),
+    diagnostics: DiagnosticsSchema.optional(),
     dataManifest: z.array(DataManifestEntrySchema),
     warnings: z.array(AnalysisWarningSchema),
   })

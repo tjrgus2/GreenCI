@@ -18,6 +18,26 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 50
+        },
+        "annotations": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "enabled": { "default": true, "type": "boolean" },
+            "max-count": {
+              "default": 20,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 50
+            },
+            "min-confidence": {
+              "default": 0.9,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -82,7 +102,76 @@
       "default": {},
       "type": "object",
       "properties": {
-        "exclude-current-job": { "default": true, "type": "boolean" }
+        "exclude-current-job": { "default": true, "type": "boolean" },
+        "critical-path": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "enabled": { "default": true, "type": "boolean" },
+            "parse-workflow-dag": { "default": true, "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
+        "failure-logs": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "enabled": { "default": false, "type": "boolean" },
+            "max-bytes-per-job": {
+              "default": 2097152,
+              "type": "integer",
+              "minimum": 1024,
+              "maximum": 8388608
+            },
+            "max-jobs": {
+              "default": 3,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            },
+            "tail-lines": {
+              "default": 2000,
+              "type": "integer",
+              "minimum": 50,
+              "maximum": 20000
+            }
+          },
+          "additionalProperties": false
+        },
+        "test-reports": {
+          "default": [],
+          "maxItems": 5,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "artifact": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "format": {
+                "default": "junit",
+                "type": "string",
+                "const": "junit"
+              },
+              "max-uncompressed-bytes": {
+                "default": 10485760,
+                "type": "integer",
+                "minimum": 1024,
+                "maximum": 52428800
+              },
+              "max-files": {
+                "default": 100,
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1000
+              }
+            },
+            "required": ["artifact"],
+            "additionalProperties": false
+          }
+        }
       },
       "additionalProperties": false
     },
@@ -139,6 +228,80 @@
       "properties": {
         "enabled": { "default": true, "type": "boolean" },
         "show-public-runner-equivalent": { "default": true, "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "policy": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "default-mode": {
+          "default": "warn",
+          "type": "string",
+          "enum": ["report", "warn", "fail"]
+        },
+        "rules": {
+          "default": [],
+          "maxItems": 20,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "metric": {
+                "type": "string",
+                "enum": [
+                  "wall-clock-regression-percent",
+                  "runner-time-regression-percent",
+                  "list-price-regression-percent",
+                  "carbon-p50-regression-percent",
+                  "carbon-p95-grams",
+                  "failed-jobs",
+                  "workflow-shape-match",
+                  "critical-path-regression-percent"
+                ]
+              },
+              "operator": {
+                "default": "greater-than",
+                "type": "string",
+                "enum": [
+                  "greater-than",
+                  "greater-than-or-equal",
+                  "less-than",
+                  "less-than-or-equal"
+                ]
+              },
+              "value": { "type": "number" },
+              "mode": { "type": "string", "enum": ["report", "warn", "fail"] },
+              "minimum-confidence": {
+                "default": "medium",
+                "type": "string",
+                "enum": ["high", "medium", "low"]
+              }
+            },
+            "required": ["metric", "value"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "recommendations": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "enabled": { "default": true, "type": "boolean" },
+        "minimum-confidence": {
+          "default": 0.65,
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "max-count": {
+          "default": 5,
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        }
       },
       "additionalProperties": false
     }

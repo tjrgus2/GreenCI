@@ -107,7 +107,7 @@ describe('repository configuration loading', () => {
       }),
       reference,
     );
-    expect(result.warnings[0]?.message).toContain('decoded');
+    expect(result.warnings[0]?.message).toContain('exceeds');
   });
 
   it('rejects YAML aliases used as an amplification vector', async () => {

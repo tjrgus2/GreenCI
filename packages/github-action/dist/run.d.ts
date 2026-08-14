@@ -6,6 +6,14 @@ export interface ActionIO {
     info(message: string): void;
     warning(message: string): void;
     setOutput(name: string, value: string | number): void;
+    setFailed(message: string): void;
+    annotate(annotation: {
+        readonly severity: 'error' | 'warning' | 'notice';
+        readonly message: string;
+        readonly file: string;
+        readonly line: number;
+        readonly column?: number | undefined;
+    }): void;
     writeSummary(markdown: string): Promise<void>;
     uploadArtifact(name: string, files: readonly string[], rootDirectory: string): Promise<void>;
 }

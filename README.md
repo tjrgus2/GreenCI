@@ -46,7 +46,12 @@ falls back to the Job Summary instead of failing the job.
 | Pull-request comment  | Improvement or regression, the four headline metrics against their baseline medians, top regressions, confidence, and a collapsible estimation-details section. One comment, updated in place. |
 | Job Summary           | Everything above plus per-job and per-step tables, the full baseline sample, per-job cost rounding, carbon percentiles, assumptions, and all warnings.                                         |
 | `greenci-report.json` | The complete machine-readable report, validated against `schemas/report-v1.schema.json`.                                                                                                       |
-| Action outputs        | `report-path`, `runner-seconds`, `carbon-p50-grams`, `carbon-p95-grams`, `list-price-usd`, `policy-conclusion`.                                                                                |
+| Action outputs        | `report-path`, `runner-seconds`, `carbon-p50-grams`, `carbon-p95-grams`, `list-price-usd`, `policy-conclusion`, `critical-path-seconds`, `recommendation-count`.                               |
+
+Beyond the four headline metrics, the report separates **critical-path
+bottlenecks** (what made developers wait) from **parallel resource hotspots**
+(what consumed runner time, cost, and carbon), lists deterministic
+evidence-backed recommendations, and evaluates an optional CI budget.
 
 ## Inputs
 
@@ -89,6 +94,41 @@ report:
   pr-comment: true
   update-existing-comment: true
   top-hotspots: 5
+  annotations:
+    enabled: true
+    max-count: 20
+    min-confidence: 0.9
+
+analysis:
+  critical-path:
+    enabled: true
+    parse-workflow-dag: true
+  # Off by default. Reads only a bounded tail of failed job logs, in memory.
+  failure-logs:
+    enabled: false
+    max-bytes-per-job: 2097152
+    max-jobs: 3
+    tail-lines: 2000
+  test-reports:
+    - artifact: test-results
+      format: junit
+      max-uncompressed-bytes: 10485760
+
+recommendations:
+  enabled: true
+  minimum-confidence: 0.65
+  max-count: 5
+
+# No rule is configured by default, so GreenCI cannot block a pull request
+# unless you opt in.
+policy:
+  default-mode: warn
+  rules:
+    - metric: runner-time-regression-percent
+      operator: greater-than
+      value: 20
+      mode: warn
+      minimum-confidence: medium
 ```
 
 ## How the numbers are produced
@@ -134,11 +174,14 @@ node packages/cli/dist/entrypoint.js replay fixtures/workflow-runs/baseline-regr
 
 Implemented: current-run runtime and concurrency analysis, historical baselines,
 workflow-shape fingerprints, robust regression detection, cost, carbon, the
-pull-request comment, English and Korean rendering, and the versioned JSON
-report.
+pull-request comment, English and Korean rendering, the versioned JSON report,
+workflow-DAG critical-path analysis with an interval fallback, eight
+deterministic recommendation rules, the confidence-gated policy engine, hardened
+JUnit artifact analysis, and opt-in bounded failure-log diagnostics with
+annotations.
 
-Not yet implemented: DAG critical-path analysis, the recommendation engine, the
-policy gate, JUnit artifact analysis, and optional failure-log parsing.
+Not yet implemented (Week 4): CodeQL, Scorecard, Dependabot, SBOM and artifact
+attestation, the release workflow, and the recorded before/after demo.
 
 ## License
 

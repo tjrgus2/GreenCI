@@ -17,6 +17,7 @@ export type {
   NormalizedStep,
   WorkflowRunIdentity,
 } from './domain/schemas.js';
+export { DiagnosticsReportSchema, TestReportSchema } from './domain/schemas.js';
 export {
   AnalysisReportSchema,
   REPORT_SCHEMA_VERSION,
@@ -94,6 +95,75 @@ export type {
   RobustComparison,
   ScaleMethod,
 } from './analysis/statistics.js';
+export {
+  buildWorkflowDag,
+  definitionEdges,
+  parseWorkflowDefinition,
+  WorkflowDefinitionSchema,
+} from './analysis/dag.js';
+export type {
+  DagConfidence,
+  DagNode,
+  WorkflowDag,
+  WorkflowDefinition,
+} from './analysis/dag.js';
+export {
+  analyzeCriticalPath,
+  analyzeIntervalCriticality,
+} from './analysis/critical-path.js';
+export type {
+  CriticalPathAnalysis,
+  CriticalPathNode,
+  ParallelHotspot,
+} from './analysis/critical-path.js';
+export { analyzeFailures } from './analysis/failures.js';
+export type { FailureSummary, JobFailure } from './analysis/failures.js';
+export {
+  BUILT_IN_RULES,
+  evaluateRecommendations,
+} from './recommendation/index.js';
+export type {
+  AnalysisContext,
+  Recommendation,
+  RecommendationRule,
+} from './recommendation/index.js';
+export { evaluatePolicies } from './policy/index.js';
+export type {
+  PolicyEvaluation,
+  PolicyMetric,
+  PolicyMode,
+  PolicyOperator,
+  PolicyResult,
+  PolicyRule,
+} from './policy/index.js';
+export {
+  DEFAULT_ZIP_LIMITS,
+  readZipEntries,
+  validateArchivePath,
+} from './artifacts/zip.js';
+export type { ZipEntry, ZipLimits, ZipRejection } from './artifacts/zip.js';
+export { DEFAULT_JUNIT_LIMITS, parseJUnitArchive } from './artifacts/junit.js';
+export type {
+  JUnitLimits,
+  TestCaseSummary,
+  TestReportSummary,
+} from './artifacts/junit.js';
+export {
+  BUILT_IN_PARSERS,
+  DEFAULT_DIAGNOSTIC_LIMITS,
+  isRepositoryRelative,
+  parseFailureLog,
+  redactSecrets,
+  sanitizeLine,
+  selectAnnotations,
+  stripAnsi,
+} from './diagnostics/index.js';
+export type {
+  Diagnostic,
+  DiagnosticLimits,
+  DiagnosticParser,
+  DiagnosticResult,
+} from './diagnostics/index.js';
 export { compareWithBaseline, jobComparisonKey } from './analysis/baseline.js';
 export type {
   BaselineComparison,

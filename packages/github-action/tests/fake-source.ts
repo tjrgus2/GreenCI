@@ -41,6 +41,15 @@ export function fakeSource(
     async getAuthenticatedLogin() {
       return undefined;
     },
+    async listArtifacts() {
+      return [];
+    },
+    async downloadArtifact() {
+      throw Object.assign(new Error('Not Found'), { status: 404 });
+    },
+    async downloadJobLogs() {
+      throw Object.assign(new Error('Not Found'), { status: 404 });
+    },
     ...overrides,
   };
 }
