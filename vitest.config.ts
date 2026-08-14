@@ -6,7 +6,10 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json-summary'],
       include: ['packages/core/src/**/*.ts'],
-      exclude: ['packages/core/src/index.ts'],
+      exclude: [
+        'packages/core/src/index.ts',
+        'packages/core/src/datasets/generated.ts',
+      ],
       thresholds: {
         lines: 85,
         branches: 80,

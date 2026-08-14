@@ -63,7 +63,7 @@ const JobSchema = z
 
 const JobsSchema = z.array(JobSchema);
 
-/** Minimal injected GitHub API boundary for current-run collection. */
+/** Minimal injected GitHub API boundary used by every collection routine. */
 export interface GitHubDataSource {
   getRepository(parameters: {
     owner: string;
@@ -80,6 +80,37 @@ export interface GitHubDataSource {
     runId: number;
     runAttempt: number;
   }): Promise<unknown>;
+  listSuccessfulRuns(parameters: {
+    owner: string;
+    repository: string;
+    workflowId: number;
+    branch: string;
+    perPage: number;
+  }): Promise<unknown>;
+  getFileContent(parameters: {
+    owner: string;
+    repository: string;
+    path: string;
+    ref: string;
+  }): Promise<unknown>;
+  listIssueComments(parameters: {
+    owner: string;
+    repository: string;
+    issueNumber: number;
+  }): Promise<unknown>;
+  createIssueComment(parameters: {
+    owner: string;
+    repository: string;
+    issueNumber: number;
+    body: string;
+  }): Promise<unknown>;
+  updateIssueComment(parameters: {
+    owner: string;
+    repository: string;
+    commentId: number;
+    body: string;
+  }): Promise<unknown>;
+  getAuthenticatedLogin(): Promise<string | undefined>;
 }
 
 /** Input identifying the current workflow run in GitHub. */
@@ -191,6 +222,13 @@ function normalizeJob(job: z.infer<typeof JobSchema>): NormalizedJob {
   };
 }
 
+/** Validate an unknown jobs payload and convert it into core domain values. */
+export function normalizeJobs(rawJobs: unknown): NormalizedJob[] {
+  return JobsSchema.parse(rawJobs).map((job) =>
+    NormalizedJobSchema.parse(normalizeJob(job)),
+  );
+}
+
 /** Validate unknown GitHub responses and convert them into core domain values. */
 export function normalizeCurrentRun(
   rawRun: unknown,
@@ -224,6 +262,32 @@ export function normalizeCurrentRun(
     identity,
     jobs: jobs.map((job) => NormalizedJobSchema.parse(normalizeJob(job))),
   };
+}
+
+/** Run tasks with a bounded concurrency so history collection stays polite. */
+export async function mapWithConcurrency<T, R>(
+  items: readonly T[],
+  limit: number,
+  task: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array<R>(items.length);
+  let cursor = 0;
+  const workers = Array.from(
+    { length: Math.max(1, Math.min(limit, items.length)) },
+    async () => {
+      for (;;) {
+        const index = cursor;
+        cursor += 1;
+        const item = items[index];
+        if (index >= items.length || item === undefined) {
+          return;
+        }
+        results[index] = await task(item);
+      }
+    },
+  );
+  await Promise.all(workers);
+  return results;
 }
 
 /** Collect and normalize only the current run attempt. */
@@ -283,6 +347,61 @@ export function createGitHubDataSource(token: string): GitHubDataSource {
           per_page: 100,
         },
       );
+    },
+    async listSuccessfulRuns(parameters) {
+      const response = await octokit.rest.actions.listWorkflowRuns({
+        owner: parameters.owner,
+        repo: parameters.repository,
+        workflow_id: parameters.workflowId,
+        branch: parameters.branch,
+        status: 'success',
+        exclude_pull_requests: true,
+        per_page: parameters.perPage,
+      });
+      return response.data.workflow_runs;
+    },
+    async getFileContent(parameters) {
+      const response = await octokit.rest.repos.getContent({
+        owner: parameters.owner,
+        repo: parameters.repository,
+        path: parameters.path,
+        ref: parameters.ref,
+      });
+      return response.data;
+    },
+    async listIssueComments(parameters) {
+      return octokit.paginate(octokit.rest.issues.listComments, {
+        owner: parameters.owner,
+        repo: parameters.repository,
+        issue_number: parameters.issueNumber,
+        per_page: 100,
+      });
+    },
+    async createIssueComment(parameters) {
+      const response = await octokit.rest.issues.createComment({
+        owner: parameters.owner,
+        repo: parameters.repository,
+        issue_number: parameters.issueNumber,
+        body: parameters.body,
+      });
+      return response.data;
+    },
+    async updateIssueComment(parameters) {
+      const response = await octokit.rest.issues.updateComment({
+        owner: parameters.owner,
+        repo: parameters.repository,
+        comment_id: parameters.commentId,
+        body: parameters.body,
+      });
+      return response.data;
+    },
+    async getAuthenticatedLogin() {
+      try {
+        const response = await octokit.rest.users.getAuthenticated();
+        return response.data.login;
+      } catch {
+        return undefined;
+      }
     },
   };
 }

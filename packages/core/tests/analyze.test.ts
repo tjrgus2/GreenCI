@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { analyzeWorkflow } from '../src/analysis/analyze.js';
 import { excludeAnalyzerJob } from '../src/analysis/exclusion.js';
+import { AnalysisReportSchema } from '../src/domain/report.js';
 import {
-  AnalysisReportSchema,
   AnalyzeWorkflowInputSchema,
   type AnalyzeWorkflowInput,
   type NormalizedJob,
@@ -74,7 +74,17 @@ describe('analyzeWorkflow', () => {
     expect(report.current.runnerSeconds).toBe(60);
     expect(report.current.wallClockSeconds).toBe(60);
     expect(report.analyzerExclusion.method).toBe('name');
+    expect(report.schemaVersion).toBe('1.1.0');
+    expect(report.locale).toBe('en');
+    expect(report.shape.fingerprint).toMatch(/^[0-9a-f]{64}$/u);
+    expect(report.dataManifest.length).toBeGreaterThan(0);
     expect(AnalysisReportSchema.parse(report)).toEqual(report);
+  });
+
+  it('is byte-for-byte reproducible for identical input', () => {
+    expect(JSON.stringify(analyzeWorkflow(input))).toBe(
+      JSON.stringify(analyzeWorkflow(input)),
+    );
   });
 
   it('rejects unknown persisted-input keys', () => {
@@ -102,6 +112,36 @@ describe('analyzeWorkflow', () => {
         },
       ],
     });
-    expect(report.warnings).toHaveLength(2);
+    expect(report.warnings.map((warning) => warning.code)).toEqual([
+      'ANALYZER_NOT_IDENTIFIED',
+      'STEP_TIMESTAMPS_INCOMPLETE',
+      'BASELINE_UNAVAILABLE',
+    ]);
+  });
+
+  it('reports an unavailable baseline without cost or carbon regressions', () => {
+    const report = analyzeWorkflow(input);
+    expect(report.baseline.status).toBe('unavailable');
+    expect(report.baseline.metrics).toEqual([]);
+    expect(report.cost?.billingBasis).toBe('standard-public-free');
+    expect(report.carbon?.operationalCarbonGrams.p50).toBeGreaterThan(0);
+  });
+
+  it('honours a repository configuration that disables estimation', () => {
+    const report = analyzeWorkflow({
+      ...input,
+      config: { cost: { enabled: false }, carbon: { enabled: false } },
+    });
+    expect(report.cost).toBeUndefined();
+    expect(report.carbon).toBeUndefined();
+  });
+
+  it('keeps every job when analyzer exclusion is disabled', () => {
+    const report = analyzeWorkflow({
+      ...input,
+      config: { analysis: { 'exclude-current-job': false } },
+    });
+    expect(report.jobs).toHaveLength(2);
+    expect(report.analyzerExclusion.method).toBe('none');
   });
 });

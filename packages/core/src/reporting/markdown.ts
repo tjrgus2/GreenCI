@@ -1,85 +1,358 @@
-import type { AnalysisReport, NormalizedJob } from '../domain/schemas.js';
+import type { AnalysisReport } from '../domain/report.js';
+import type { NormalizedJob } from '../domain/schemas.js';
+import {
+  renderConfidenceLine,
+  renderEstimationDetails,
+  renderHeadline,
+  renderMetricTable,
+  renderRegressionTable,
+  renderWarnings,
+  translateConfidence,
+  translateVerdict,
+} from './common.js';
+import {
+  escapeMarkdown,
+  formatDuration,
+  formatGrams,
+  formatKwh,
+  formatNumber,
+  formatRatio,
+  formatSignedPercent,
+  formatUsd,
+  renderTable,
+  truncate,
+} from './format.js';
+import { createTranslator, type Translator } from './i18n/index.js';
 
-/** Escape repository-controlled text before placing it in Markdown tables. */
-export function escapeMarkdown(value: string): string {
-  return value
-    .replaceAll('\\', '\\\\')
-    .replaceAll('|', '\\|')
-    .replaceAll('`', '\\`')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll(/\r?\n/g, '<br>');
+export { escapeMarkdown, formatDuration } from './format.js';
+
+const JOB_SUMMARY_ROW_LIMIT = 20;
+
+function jobRows(report: AnalysisReport): string[][] {
+  return report.jobs.map((job) => [
+    escapeMarkdown(truncate(job.apiName, 90)),
+    escapeMarkdown(job.runnerClass),
+    escapeMarkdown(job.conclusion),
+    formatDuration(job.durationSeconds),
+  ]);
 }
 
-/** Format seconds without producing NaN or infinite output. */
-export function formatDuration(seconds: number | undefined): string {
-  if (seconds === undefined || !Number.isFinite(seconds)) {
-    return 'Unavailable';
-  }
-  const safeSeconds = Math.max(0, Math.round(seconds));
-  const minutes = Math.floor(safeSeconds / 60);
-  const remainder = safeSeconds % 60;
-  return minutes === 0 ? `${remainder}s` : `${minutes}m ${remainder}s`;
-}
-
-function renderStepRows(job: NormalizedJob): string[] {
+function stepRows(job: NormalizedJob): string[][] {
   if (job.steps.length === 0) {
-    return [`| ${escapeMarkdown(job.apiName)} | — | — |`];
+    return [[escapeMarkdown(truncate(job.apiName, 90)), '—', '—', '—']];
   }
-  return job.steps.map(
-    (step) =>
-      `| ${escapeMarkdown(job.apiName)} | ${escapeMarkdown(step.name)} | ${formatDuration(step.durationSeconds)} |`,
-  );
+  return job.steps.map((step) => [
+    escapeMarkdown(truncate(job.apiName, 90)),
+    escapeMarkdown(truncate(step.name, 90)),
+    escapeMarkdown(step.conclusion),
+    formatDuration(step.durationSeconds),
+  ]);
 }
 
-/** Render the complete Week 1 result for the GitHub Job Summary surface. */
-export function renderJobSummary(report: AnalysisReport): string {
-  const jobRows = report.jobs.map(
-    (job) =>
-      `| ${escapeMarkdown(job.apiName)} | ${escapeMarkdown(job.runnerClass)} | ${escapeMarkdown(job.conclusion)} | ${formatDuration(job.durationSeconds)} |`,
-  );
-  const stepRows = report.jobs.flatMap(renderStepRows);
-  const warningLines = report.warnings.map(
-    (warning) =>
-      `- \`${warning.code}\` ${escapeMarkdown(warning.message)} (${warning.source})`,
-  );
+function renderBaselineSection(
+  report: AnalysisReport,
+  translate: Translator,
+): string[] {
+  const baseline = report.baseline;
+  const runRows = baseline.runs
+    .slice(0, JOB_SUMMARY_ROW_LIMIT)
+    .map((run) => [
+      String(run.runId),
+      String(run.runAttempt),
+      formatRatio(run.shapeSimilarity),
+      run.exactShapeMatch ? 'exact' : 'similar',
+      run.included ? 'included' : 'excluded',
+      formatDuration(run.wallClockSeconds),
+      formatDuration(run.runnerSeconds),
+    ]);
+
+  const metricRows = baseline.metrics.map((metric) => [
+    `\`${escapeMarkdown(metric.metric)}\``,
+    formatNumber(metric.baselineMedian, 3),
+    formatNumber(metric.current, 3),
+    formatSignedPercent(metric.percentChange),
+    formatNumber(metric.modifiedZScore, 2),
+    escapeMarkdown(metric.scaleMethod),
+    String(metric.sampleCount),
+    translateVerdict(translate, metric.verdict),
+    translateConfidence(translate, metric.confidence),
+  ]);
 
   return [
-    '<!-- greenci-report:v1 -->',
+    `## ${translate('section.baseline')}`,
     '',
-    '# GreenCI Current-Run Report',
+    `- ${translate('baseline.branch')}: ${escapeMarkdown(truncate(baseline.branch ?? '—', 80))}`,
+    `- ${translate('baseline.considered')}: ${baseline.consideredRuns}`,
+    `- ${translate('baseline.included')}: ${baseline.sampleCount}`,
+    `- ${translate('baseline.excludedShape')}: ${baseline.excludedForShape}`,
+    `- ${translate('label.shapeMatch')}: ${formatRatio(baseline.shapeSimilarity)} (threshold ${formatRatio(baseline.shapeThreshold)})`,
+    `- ${translate('baseline.fingerprint')}: \`${baseline.currentFingerprint.slice(0, 24)}\``,
     '',
-    `Run: \`${report.identity.runId}\` (attempt ${report.identity.runAttempt})`,
+    ...renderTable(
+      [
+        'run',
+        'attempt',
+        translate('label.shapeMatch'),
+        'shape',
+        'state',
+        translate('metric.wallClock'),
+        translate('metric.runnerTime'),
+      ],
+      ['right', 'right', 'right', 'left', 'left', 'right', 'right'],
+      runRows,
+    ),
     '',
-    '## Runtime',
+    ...renderTable(
+      [
+        translate('table.metric'),
+        translate('table.baseline'),
+        translate('table.current'),
+        translate('table.change'),
+        translate('label.zScore'),
+        'scale',
+        translate('label.samples'),
+        translate('label.verdict'),
+        translate('label.confidence'),
+      ],
+      [
+        'left',
+        'right',
+        'right',
+        'right',
+        'right',
+        'left',
+        'right',
+        'left',
+        'left',
+      ],
+      metricRows,
+    ),
+  ];
+}
+
+function renderNodeComparisons(
+  report: AnalysisReport,
+  translate: Translator,
+): string[] {
+  const rows = [
+    ...report.baseline.jobComparisons,
+    ...report.baseline.stepComparisons,
+  ]
+    .slice(0, JOB_SUMMARY_ROW_LIMIT)
+    .map((entry) => [
+      escapeMarkdown(entry.kind),
+      `\`${escapeMarkdown(truncate(entry.label, 90))}\``,
+      formatDuration(entry.baselineMedian),
+      formatDuration(entry.current),
+      formatSignedPercent(entry.percentChange),
+      formatNumber(entry.modifiedZScore, 2),
+      String(entry.sampleCount),
+      translateVerdict(translate, entry.verdict),
+    ]);
+  return renderTable(
+    [
+      'kind',
+      `${translate('label.job')} / ${translate('label.step')}`,
+      translate('table.baseline'),
+      translate('table.current'),
+      translate('table.change'),
+      translate('label.zScore'),
+      translate('label.samples'),
+      translate('label.verdict'),
+    ],
+    ['left', 'left', 'right', 'right', 'right', 'right', 'right', 'left'],
+    rows,
+  );
+}
+
+function renderCostSection(
+  report: AnalysisReport,
+  translate: Translator,
+): string[] {
+  const cost = report.cost;
+  if (cost === undefined) {
+    return [
+      `## ${translate('section.cost')}`,
+      '',
+      `_${translate('label.disabled')}_`,
+    ];
+  }
+  return [
+    `## ${translate('section.cost')}`,
     '',
-    '| Metric | Value |',
-    '|---|---:|',
-    `| Wall-clock time | ${formatDuration(report.current.wallClockSeconds)} |`,
-    `| Total runner time | ${formatDuration(report.current.runnerSeconds)} |`,
-    `| Peak concurrency | ${report.parallelism.peakConcurrency} |`,
-    `| Average concurrency | ${report.parallelism.averageConcurrency.toFixed(3)} |`,
-    `| Idle gaps | ${formatDuration(report.parallelism.idleSeconds)} |`,
+    ...renderTable(
+      [translate('table.metric'), translate('table.value')],
+      ['left', 'right'],
+      [
+        [translate('cost.gross'), formatUsd(cost.grossListPriceUsd)],
+        [translate('cost.billable'), formatUsd(cost.estimatedBillableUsd)],
+        [translate('cost.billableMinutes'), String(cost.billableMinutes)],
+      ],
+    ),
     '',
-    '## Jobs',
+    ...renderTable(
+      [
+        translate('label.job'),
+        translate('label.runnerClass'),
+        translate('label.duration'),
+        translate('cost.billableMinutes'),
+        translate('cost.gross'),
+      ],
+      ['left', 'left', 'right', 'right', 'right'],
+      cost.jobs
+        .slice(0, JOB_SUMMARY_ROW_LIMIT)
+        .map((entry) => [
+          escapeMarkdown(truncate(entry.jobName, 90)),
+          escapeMarkdown(entry.runnerClass),
+          formatDuration(entry.durationSeconds),
+          String(entry.billableMinutes),
+          entry.priced ? formatUsd(entry.grossListPriceUsd) : '—',
+        ]),
+    ),
     '',
-    '| Job | Runner class | Conclusion | Duration |',
-    '|---|---|---|---:|',
-    ...(jobRows.length === 0 ? ['| — | — | — | — |'] : jobRows),
+    `_${translate('cost.invoiceUnknown')}_`,
+  ];
+}
+
+function renderCarbonSection(
+  report: AnalysisReport,
+  translate: Translator,
+): string[] {
+  const carbon = report.carbon;
+  if (carbon === undefined) {
+    return [
+      `## ${translate('section.carbon')}`,
+      '',
+      `_${translate('label.disabled')}_`,
+    ];
+  }
+  return [
+    `## ${translate('section.carbon')}`,
     '',
-    '## Steps',
+    ...renderTable(
+      [translate('table.metric'), 'p05', 'p50', 'p95'],
+      ['left', 'right', 'right', 'right'],
+      [
+        [
+          translate('carbon.energy'),
+          formatKwh(carbon.energyKwh.p05),
+          formatKwh(carbon.energyKwh.p50),
+          formatKwh(carbon.energyKwh.p95),
+        ],
+        [
+          translate('metric.carbon'),
+          formatGrams(carbon.operationalCarbonGrams.p05),
+          formatGrams(carbon.operationalCarbonGrams.p50),
+          formatGrams(carbon.operationalCarbonGrams.p95),
+        ],
+      ],
+    ),
     '',
-    '| Job | Step | Duration |',
-    '|---|---|---:|',
-    ...(stepRows.length === 0 ? ['| — | — | — |'] : stepRows),
+    ...carbon.assumptions.map(
+      (assumption) =>
+        `- \`${escapeMarkdown(assumption.key)}\`: ${escapeMarkdown(truncate(assumption.value, 160))} — ${escapeMarkdown(truncate(assumption.source, 160))}`,
+    ),
     '',
-    '## Data quality and warnings',
+    `_${escapeMarkdown(carbon.measurementDisclaimer)}_`,
+  ];
+}
+
+/** Render the complete GreenCI result for the GitHub Job Summary surface. */
+export function renderJobSummary(report: AnalysisReport): string {
+  const translate = createTranslator(report.locale);
+  return [
+    `# ${translate('report.title')}`,
+    '',
+    `Run \`${report.identity.runId}\` (attempt ${report.identity.runAttempt}) · \`${escapeMarkdown(truncate(report.identity.workflowPath, 120))}\``,
+    '',
+    `> ${renderHeadline(report, translate)}`,
+    '',
+    ...renderMetricTable(report, translate),
+    '',
+    renderConfidenceLine(report, translate),
+    '',
+    `## ${translate('section.topRegressions')}`,
+    '',
+    ...renderRegressionTable(report, translate, JOB_SUMMARY_ROW_LIMIT),
+    '',
+    `## ${translate('section.runtime')}`,
+    '',
+    ...renderTable(
+      [translate('table.metric'), translate('table.value')],
+      ['left', 'right'],
+      [
+        [
+          translate('metric.wallClock'),
+          formatDuration(report.current.wallClockSeconds),
+        ],
+        [
+          translate('metric.runnerTime'),
+          formatDuration(report.current.runnerSeconds),
+        ],
+        [
+          translate('parallelism.peak'),
+          String(report.parallelism.peakConcurrency),
+        ],
+        [
+          translate('parallelism.average'),
+          formatNumber(report.parallelism.averageConcurrency, 3),
+        ],
+        [
+          translate('parallelism.idle'),
+          formatDuration(report.parallelism.idleSeconds),
+        ],
+      ],
+    ),
+    '',
+    `## ${translate('section.jobs')}`,
+    '',
+    ...renderTable(
+      [
+        translate('label.job'),
+        translate('label.runnerClass'),
+        translate('label.conclusion'),
+        translate('label.duration'),
+      ],
+      ['left', 'left', 'left', 'right'],
+      jobRows(report),
+    ),
+    '',
+    `## ${translate('section.steps')}`,
+    '',
+    ...renderTable(
+      [
+        translate('label.job'),
+        translate('label.step'),
+        translate('label.conclusion'),
+        translate('label.duration'),
+      ],
+      ['left', 'left', 'left', 'right'],
+      report.jobs.flatMap(stepRows),
+    ),
+    '',
+    ...renderBaselineSection(report, translate),
+    '',
+    ...renderNodeComparisons(report, translate),
+    '',
+    ...renderCostSection(report, translate),
+    '',
+    ...renderCarbonSection(report, translate),
+    '',
+    `## ${translate('section.details')}`,
+    '',
+    ...renderEstimationDetails(report, translate),
+    '',
+    `## ${translate('section.warnings')}`,
     '',
     `Analyzer exclusion: ${escapeMarkdown(report.analyzerExclusion.method)}${report.analyzerExclusion.heuristic ? ' (heuristic)' : ''}`,
     '',
-    ...(warningLines.length === 0 ? ['- No warnings.'] : warningLines),
+    ...renderWarnings(report, translate),
     '',
-    'Runtime values come from GitHub Actions timestamps. GreenCI does not directly measure energy in this Week 1 report.',
+    translate('footer.generated', {
+      version: report.greenciVersion,
+      schema: report.schemaVersion,
+      locale: report.locale,
+    }),
     '',
   ].join('\n');
 }

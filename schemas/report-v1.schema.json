@@ -1,98 +1,53 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://greenci.dev/schemas/report-v1.schema.json",
-  "title": "GreenCI Week 1 Report",
+  "title": "GreenCI Report 1.1.0",
   "type": "object",
-  "additionalProperties": false,
-  "required": [
-    "schemaVersion",
-    "generatedAt",
-    "greenciVersion",
-    "identity",
-    "current",
-    "jobs",
-    "parallelism",
-    "analyzerExclusion",
-    "warnings"
-  ],
   "properties": {
-    "schemaVersion": { "const": "1.0.0" },
-    "generatedAt": { "type": "string", "format": "date-time" },
+    "schemaVersion": { "type": "string", "const": "1.1.0" },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+    },
     "greenciVersion": { "type": "string" },
-    "identity": { "$ref": "#/$defs/identity" },
-    "current": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "wallClockSeconds",
-        "activeSeconds",
-        "runnerSeconds",
-        "jobsAnalyzed",
-        "stepsAnalyzed"
-      ],
-      "properties": {
-        "wallClockSeconds": { "type": "number", "minimum": 0 },
-        "activeSeconds": { "type": "number", "minimum": 0 },
-        "runnerSeconds": { "type": "number", "minimum": 0 },
-        "jobsAnalyzed": { "type": "integer", "minimum": 0 },
-        "stepsAnalyzed": { "type": "integer", "minimum": 0 }
-      }
-    },
-    "jobs": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/job" }
-    },
-    "parallelism": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "peakConcurrency",
-        "averageConcurrency",
-        "runnerTimeToWallClockRatio",
-        "idleSeconds",
-        "timeline"
-      ],
-      "properties": {
-        "peakConcurrency": { "type": "integer", "minimum": 0 },
-        "averageConcurrency": { "type": "number", "minimum": 0 },
-        "runnerTimeToWallClockRatio": { "type": "number", "minimum": 0 },
-        "idleSeconds": { "type": "number", "minimum": 0 },
-        "timeline": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["at", "concurrency"],
-            "properties": {
-              "at": { "type": "string", "format": "date-time" },
-              "concurrency": { "type": "integer", "minimum": 0 }
-            }
-          }
-        }
-      }
-    },
-    "analyzerExclusion": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["excludedJobIds", "method", "heuristic"],
-      "properties": {
-        "excludedJobIds": {
-          "type": "array",
-          "items": { "type": "integer", "minimum": 0 }
-        },
-        "method": { "enum": ["name", "in-progress", "none"] },
-        "heuristic": { "type": "boolean" }
-      }
-    },
-    "warnings": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/warning" }
-    }
-  },
-  "$defs": {
+    "locale": { "type": "string", "enum": ["en", "ko"] },
+    "configHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
     "identity": {
       "type": "object",
-      "additionalProperties": false,
+      "properties": {
+        "owner": { "type": "string", "minLength": 1 },
+        "repository": { "type": "string", "minLength": 1 },
+        "workflowId": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "workflowPath": { "type": "string", "minLength": 1 },
+        "runId": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "runAttempt": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
+        "headSha": { "type": "string", "minLength": 1 },
+        "headBranch": { "type": "string" },
+        "baseBranch": { "type": "string" },
+        "event": { "type": "string", "minLength": 1 },
+        "pullRequestNumber": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
+        "repositoryVisibility": {
+          "type": "string",
+          "enum": ["public", "private", "internal", "unknown"]
+        }
+      },
       "required": [
         "owner",
         "repository",
@@ -105,103 +60,745 @@
         "event",
         "repositoryVisibility"
       ],
+      "additionalProperties": false
+    },
+    "current": {
+      "type": "object",
       "properties": {
-        "owner": { "type": "string", "minLength": 1 },
-        "repository": { "type": "string", "minLength": 1 },
-        "workflowId": { "type": "integer", "minimum": 0 },
-        "workflowPath": { "type": "string", "minLength": 1 },
-        "runId": { "type": "integer", "minimum": 0 },
-        "runAttempt": { "type": "integer", "minimum": 1 },
-        "headSha": { "type": "string", "minLength": 1 },
-        "headBranch": { "type": "string" },
-        "baseBranch": { "type": "string" },
-        "event": { "type": "string", "minLength": 1 },
-        "pullRequestNumber": { "type": "integer", "minimum": 1 },
-        "repositoryVisibility": {
-          "enum": ["public", "private", "internal", "unknown"]
+        "wallClockSeconds": { "type": "number", "minimum": 0 },
+        "activeSeconds": { "type": "number", "minimum": 0 },
+        "runnerSeconds": { "type": "number", "minimum": 0 },
+        "jobsAnalyzed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "stepsAnalyzed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
         }
+      },
+      "required": [
+        "wallClockSeconds",
+        "activeSeconds",
+        "runnerSeconds",
+        "jobsAnalyzed",
+        "stepsAnalyzed"
+      ],
+      "additionalProperties": false
+    },
+    "jobs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "apiName": { "type": "string" },
+          "logicalJobId": { "type": "string" },
+          "matrixSignature": { "type": "string" },
+          "runnerLabels": { "type": "array", "items": { "type": "string" } },
+          "runnerClass": { "type": "string" },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "durationSeconds": { "type": "number", "minimum": 0 },
+          "conclusion": {
+            "type": "string",
+            "enum": [
+              "success",
+              "failure",
+              "cancelled",
+              "skipped",
+              "timed_out",
+              "neutral",
+              "action_required",
+              "unknown"
+            ]
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "index": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "name": { "type": "string" },
+                "normalizedName": { "type": "string" },
+                "startedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "completedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "durationSeconds": { "type": "number", "minimum": 0 },
+                "conclusion": {
+                  "type": "string",
+                  "enum": [
+                    "success",
+                    "failure",
+                    "cancelled",
+                    "skipped",
+                    "timed_out",
+                    "neutral",
+                    "action_required",
+                    "unknown"
+                  ]
+                },
+                "isRunnerInternal": { "type": "boolean" }
+              },
+              "required": [
+                "index",
+                "name",
+                "normalizedName",
+                "conclusion",
+                "isRunnerInternal"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "apiName",
+          "runnerLabels",
+          "runnerClass",
+          "conclusion",
+          "steps"
+        ],
+        "additionalProperties": false
       }
     },
-    "warning": {
+    "parallelism": {
       "type": "object",
-      "additionalProperties": false,
-      "required": ["code", "source", "message"],
       "properties": {
-        "code": {
+        "peakConcurrency": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "averageConcurrency": { "type": "number", "minimum": 0 },
+        "runnerTimeToWallClockRatio": { "type": "number", "minimum": 0 },
+        "idleSeconds": { "type": "number", "minimum": 0 },
+        "timeline": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "at": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              "concurrency": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": ["at", "concurrency"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "peakConcurrency",
+        "averageConcurrency",
+        "runnerTimeToWallClockRatio",
+        "idleSeconds",
+        "timeline"
+      ],
+      "additionalProperties": false
+    },
+    "analyzerExclusion": {
+      "type": "object",
+      "properties": {
+        "excludedJobIds": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "method": { "type": "string", "enum": ["name", "in-progress", "none"] },
+        "heuristic": { "type": "boolean" }
+      },
+      "required": ["excludedJobIds", "method", "heuristic"],
+      "additionalProperties": false
+    },
+    "shape": {
+      "type": "object",
+      "properties": {
+        "fingerprint": { "type": "string", "minLength": 1 },
+        "jobIds": { "type": "array", "items": { "type": "string" } },
+        "stepKeyCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "matrixKeyCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "edgesAvailable": { "type": "boolean" },
+        "edgeCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "fingerprint",
+        "jobIds",
+        "stepKeyCount",
+        "matrixKeyCount",
+        "edgesAvailable",
+        "edgeCount"
+      ],
+      "additionalProperties": false
+    },
+    "baseline": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
           "enum": [
-            "ANALYZER_EXCLUSION_HEURISTIC",
-            "ANALYZER_NOT_IDENTIFIED",
-            "JOB_TIMESTAMPS_INCOMPLETE",
-            "STEP_TIMESTAMPS_INCOMPLETE",
-            "REPOSITORY_VISIBILITY_UNKNOWN",
-            "REPOSITORY_METADATA_UNAVAILABLE",
-            "LOCALE_FALLBACK",
-            "FAILURE_LOG_PARSING_DISABLED",
-            "SUMMARY_PUBLISH_FAILED",
-            "ARTIFACT_UPLOAD_FAILED"
+            "ready",
+            "insufficient-samples",
+            "unavailable",
+            "shape-changed"
           ]
         },
-        "source": { "enum": ["core", "github-api", "action"] },
-        "message": { "type": "string", "minLength": 1 }
-      }
-    },
-    "step": {
-      "type": "object",
-      "additionalProperties": false,
+        "branch": { "type": "string" },
+        "requestedRuns": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "consideredRuns": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "sampleCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "excludedForShape": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "exactShapeMatches": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "shapeSimilarity": { "type": "number", "minimum": 0 },
+        "shapeThreshold": { "type": "number", "minimum": 0 },
+        "minimumSamples": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "currentFingerprint": { "type": "string", "minLength": 1 },
+        "runs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "runId": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "runAttempt": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "headSha": { "type": "string", "minLength": 1 },
+              "shapeSimilarity": { "type": "number", "minimum": 0 },
+              "exactShapeMatch": { "type": "boolean" },
+              "included": { "type": "boolean" },
+              "wallClockSeconds": { "type": "number", "minimum": 0 },
+              "runnerSeconds": { "type": "number", "minimum": 0 }
+            },
+            "required": [
+              "runId",
+              "runAttempt",
+              "headSha",
+              "shapeSimilarity",
+              "exactShapeMatch",
+              "included",
+              "wallClockSeconds",
+              "runnerSeconds"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "metric": { "type": "string", "minLength": 1 },
+              "current": { "type": "number" },
+              "baselineMedian": { "type": "number" },
+              "baselineMad": { "type": "number", "minimum": 0 },
+              "baselineMin": { "type": "number" },
+              "baselineMax": { "type": "number" },
+              "sampleCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "percentChange": { "type": "number" },
+              "modifiedZScore": { "type": "number" },
+              "scaleMethod": {
+                "type": "string",
+                "enum": ["mad", "iqr", "unavailable"]
+              },
+              "verdict": {
+                "type": "string",
+                "enum": ["regression", "improvement", "stable", "inconclusive"]
+              },
+              "confidence": {
+                "type": "string",
+                "enum": ["high", "medium", "low"]
+              },
+              "reasons": { "type": "array", "items": { "type": "string" } }
+            },
+            "required": [
+              "metric",
+              "current",
+              "baselineMedian",
+              "baselineMad",
+              "baselineMin",
+              "baselineMax",
+              "sampleCount",
+              "modifiedZScore",
+              "scaleMethod",
+              "verdict",
+              "confidence",
+              "reasons"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "jobComparisons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "metric": { "type": "string", "minLength": 1 },
+              "current": { "type": "number" },
+              "baselineMedian": { "type": "number" },
+              "baselineMad": { "type": "number", "minimum": 0 },
+              "baselineMin": { "type": "number" },
+              "baselineMax": { "type": "number" },
+              "sampleCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "percentChange": { "type": "number" },
+              "modifiedZScore": { "type": "number" },
+              "scaleMethod": {
+                "type": "string",
+                "enum": ["mad", "iqr", "unavailable"]
+              },
+              "verdict": {
+                "type": "string",
+                "enum": ["regression", "improvement", "stable", "inconclusive"]
+              },
+              "confidence": {
+                "type": "string",
+                "enum": ["high", "medium", "low"]
+              },
+              "reasons": { "type": "array", "items": { "type": "string" } },
+              "kind": { "type": "string", "enum": ["job", "step"] },
+              "key": { "type": "string", "minLength": 1 },
+              "label": { "type": "string" }
+            },
+            "required": [
+              "metric",
+              "current",
+              "baselineMedian",
+              "baselineMad",
+              "baselineMin",
+              "baselineMax",
+              "sampleCount",
+              "modifiedZScore",
+              "scaleMethod",
+              "verdict",
+              "confidence",
+              "reasons",
+              "kind",
+              "key",
+              "label"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "stepComparisons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "metric": { "type": "string", "minLength": 1 },
+              "current": { "type": "number" },
+              "baselineMedian": { "type": "number" },
+              "baselineMad": { "type": "number", "minimum": 0 },
+              "baselineMin": { "type": "number" },
+              "baselineMax": { "type": "number" },
+              "sampleCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "percentChange": { "type": "number" },
+              "modifiedZScore": { "type": "number" },
+              "scaleMethod": {
+                "type": "string",
+                "enum": ["mad", "iqr", "unavailable"]
+              },
+              "verdict": {
+                "type": "string",
+                "enum": ["regression", "improvement", "stable", "inconclusive"]
+              },
+              "confidence": {
+                "type": "string",
+                "enum": ["high", "medium", "low"]
+              },
+              "reasons": { "type": "array", "items": { "type": "string" } },
+              "kind": { "type": "string", "enum": ["job", "step"] },
+              "key": { "type": "string", "minLength": 1 },
+              "label": { "type": "string" }
+            },
+            "required": [
+              "metric",
+              "current",
+              "baselineMedian",
+              "baselineMad",
+              "baselineMin",
+              "baselineMax",
+              "sampleCount",
+              "modifiedZScore",
+              "scaleMethod",
+              "verdict",
+              "confidence",
+              "reasons",
+              "kind",
+              "key",
+              "label"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "unmatchedJobs": { "type": "array", "items": { "type": "string" } }
+      },
       "required": [
-        "index",
-        "name",
-        "normalizedName",
-        "conclusion",
-        "isRunnerInternal"
+        "status",
+        "requestedRuns",
+        "consideredRuns",
+        "sampleCount",
+        "excludedForShape",
+        "exactShapeMatches",
+        "shapeSimilarity",
+        "shapeThreshold",
+        "minimumSamples",
+        "currentFingerprint",
+        "runs",
+        "metrics",
+        "jobComparisons",
+        "stepComparisons",
+        "unmatchedJobs"
       ],
-      "properties": {
-        "index": { "type": "integer", "minimum": 0 },
-        "name": { "type": "string" },
-        "normalizedName": { "type": "string" },
-        "startedAt": { "type": "string", "format": "date-time" },
-        "completedAt": { "type": "string", "format": "date-time" },
-        "durationSeconds": { "type": "number", "minimum": 0 },
-        "conclusion": { "$ref": "#/$defs/conclusion" },
-        "isRunnerInternal": { "type": "boolean" }
-      }
+      "additionalProperties": false
     },
-    "job": {
+    "cost": {
       "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "id",
-        "apiName",
-        "runnerLabels",
-        "runnerClass",
-        "conclusion",
-        "steps"
-      ],
       "properties": {
-        "id": { "type": "integer", "minimum": 0 },
-        "apiName": { "type": "string" },
-        "logicalJobId": { "type": "string" },
-        "matrixSignature": { "type": "string" },
-        "runnerLabels": { "type": "array", "items": { "type": "string" } },
-        "runnerClass": { "type": "string" },
-        "startedAt": { "type": "string", "format": "date-time" },
-        "completedAt": { "type": "string", "format": "date-time" },
-        "durationSeconds": { "type": "number", "minimum": 0 },
-        "conclusion": { "$ref": "#/$defs/conclusion" },
-        "steps": { "type": "array", "items": { "$ref": "#/$defs/step" } }
+        "modelVersion": { "type": "string", "minLength": 1 },
+        "currency": { "type": "string", "const": "USD" },
+        "billableMinutes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "grossListPriceUsd": { "type": "number", "minimum": 0 },
+        "estimatedBillableUsd": { "type": "number", "minimum": 0 },
+        "billingBasis": {
+          "type": "string",
+          "enum": ["standard-public-free", "list-price"]
+        },
+        "actualInvoiceAvailable": { "type": "boolean", "const": false },
+        "pricedJobs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "unpricedJobs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "unknownRunnerClasses": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "jobs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "jobId": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "jobName": { "type": "string" },
+              "runnerClass": { "type": "string" },
+              "durationSeconds": { "type": "number", "minimum": 0 },
+              "billableMinutes": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "usdPerMinute": { "type": "number", "minimum": 0 },
+              "grossListPriceUsd": { "type": "number", "minimum": 0 },
+              "priced": { "type": "boolean" }
+            },
+            "required": [
+              "jobId",
+              "jobName",
+              "runnerClass",
+              "durationSeconds",
+              "billableMinutes",
+              "priced"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "modelVersion",
+        "currency",
+        "billableMinutes",
+        "grossListPriceUsd",
+        "estimatedBillableUsd",
+        "billingBasis",
+        "actualInvoiceAvailable",
+        "pricedJobs",
+        "unpricedJobs",
+        "unknownRunnerClasses",
+        "jobs"
+      ],
+      "additionalProperties": false
+    },
+    "carbon": {
+      "type": "object",
+      "properties": {
+        "modelVersion": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "const": "operational-v1" },
+        "region": { "type": "string", "minLength": 1 },
+        "regionResolved": { "type": "boolean" },
+        "simulationSamples": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
+        "seedHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "energyKwh": {
+          "type": "object",
+          "properties": {
+            "p05": { "type": "number", "minimum": 0 },
+            "p50": { "type": "number", "minimum": 0 },
+            "p95": { "type": "number", "minimum": 0 },
+            "unit": { "type": "string", "minLength": 1 },
+            "modelVersion": { "type": "string", "minLength": 1 }
+          },
+          "required": ["p05", "p50", "p95", "unit", "modelVersion"],
+          "additionalProperties": false
+        },
+        "operationalCarbonGrams": {
+          "type": "object",
+          "properties": {
+            "p05": { "type": "number", "minimum": 0 },
+            "p50": { "type": "number", "minimum": 0 },
+            "p95": { "type": "number", "minimum": 0 },
+            "unit": { "type": "string", "minLength": 1 },
+            "modelVersion": { "type": "string", "minLength": 1 }
+          },
+          "required": ["p05", "p50", "p95", "unit", "modelVersion"],
+          "additionalProperties": false
+        },
+        "modeledJobs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "unmodeledJobs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "unknownRunnerClasses": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "quality": {
+          "type": "object",
+          "properties": {
+            "score": { "type": "number", "minimum": 0 },
+            "grade": { "type": "string", "enum": ["high", "medium", "low"] },
+            "reasons": { "type": "array", "items": { "type": "string" } }
+          },
+          "required": ["score", "grade", "reasons"],
+          "additionalProperties": false
+        },
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": { "type": "string", "minLength": 1 },
+              "value": { "type": "string" },
+              "source": { "type": "string", "minLength": 1 }
+            },
+            "required": ["key", "value", "source"],
+            "additionalProperties": false
+          }
+        },
+        "measurementDisclaimer": { "type": "string", "minLength": 1 }
+      },
+      "required": [
+        "modelVersion",
+        "model",
+        "region",
+        "regionResolved",
+        "simulationSamples",
+        "seedHash",
+        "energyKwh",
+        "operationalCarbonGrams",
+        "modeledJobs",
+        "unmodeledJobs",
+        "unknownRunnerClasses",
+        "quality",
+        "assumptions",
+        "measurementDisclaimer"
+      ],
+      "additionalProperties": false
+    },
+    "dataManifest": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "version": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 },
+          "source": { "type": "string", "minLength": 1 },
+          "unit": { "type": "string", "minLength": 1 },
+          "uncertainty": { "type": "string", "minLength": 1 },
+          "effectiveDate": { "type": "string", "minLength": 1 },
+          "retrievedAt": { "type": "string", "minLength": 1 },
+          "licenseNote": { "type": "string", "minLength": 1 },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        },
+        "required": [
+          "id",
+          "version",
+          "path",
+          "source",
+          "unit",
+          "uncertainty",
+          "effectiveDate",
+          "retrievedAt",
+          "licenseNote",
+          "sha256"
+        ],
+        "additionalProperties": false
       }
     },
-    "conclusion": {
-      "enum": [
-        "success",
-        "failure",
-        "cancelled",
-        "skipped",
-        "timed_out",
-        "neutral",
-        "action_required",
-        "unknown"
-      ]
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "ANALYZER_EXCLUSION_HEURISTIC",
+              "ANALYZER_NOT_IDENTIFIED",
+              "JOB_TIMESTAMPS_INCOMPLETE",
+              "STEP_TIMESTAMPS_INCOMPLETE",
+              "REPOSITORY_VISIBILITY_UNKNOWN",
+              "REPOSITORY_METADATA_UNAVAILABLE",
+              "LOCALE_FALLBACK",
+              "FAILURE_LOG_PARSING_DISABLED",
+              "SUMMARY_PUBLISH_FAILED",
+              "ARTIFACT_UPLOAD_FAILED",
+              "CONFIG_INVALID",
+              "CONFIG_UNAVAILABLE",
+              "BASELINE_UNAVAILABLE",
+              "BASELINE_INSUFFICIENT_SAMPLES",
+              "WORKFLOW_SHAPE_CHANGED",
+              "RUNNER_MODEL_UNKNOWN",
+              "RUNNER_PRICE_UNKNOWN",
+              "CARBON_REGION_UNKNOWN",
+              "PR_COMMENT_UNAVAILABLE",
+              "PR_COMMENT_FAILED"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": ["core", "github-api", "action"]
+          },
+          "message": { "type": "string", "minLength": 1 }
+        },
+        "required": ["code", "source", "message"],
+        "additionalProperties": false
+      }
     }
-  }
+  },
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "greenciVersion",
+    "locale",
+    "configHash",
+    "identity",
+    "current",
+    "jobs",
+    "parallelism",
+    "analyzerExclusion",
+    "shape",
+    "baseline",
+    "dataManifest",
+    "warnings"
+  ],
+  "additionalProperties": false
 }

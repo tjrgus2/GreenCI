@@ -15,13 +15,17 @@ inputs:
     required: false
     default: .greenci.yml
   locale:
-    description: Report locale, en or ko
+    description: >-
+      Report locale, en or ko. Leave empty to use .greenci.yml, then the
+      bundled default (en).
     required: false
-    default: en
+    default: ''
   baseline-runs:
-    description: Number of successful base-branch runs to analyze
+    description: >-
+      Number of successful base-branch runs to compare. Leave empty to use
+      .greenci.yml, then the bundled default (7).
     required: false
-    default: '7'
+    default: ''
   parse-failure-logs:
     description: Parse bounded failed-job logs locally
     required: false

@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   collectCurrentRun,
+  mapWithConcurrency,
   normalizeCurrentRun,
   normalizeRepositoryMetadata,
-  type GitHubDataSource,
 } from '../src/adapters/github.js';
+import { fakeSource } from './fake-source.js';
 
 const reference = {
   owner: 'owner',
@@ -89,8 +90,16 @@ describe('GitHub adapter', () => {
     ).toThrow();
   });
 
+  it('runs bounded concurrent work in input order', async () => {
+    const result = await mapWithConcurrency([1, 2, 3, 4, 5], 2, async (value) =>
+      Promise.resolve(value * 2),
+    );
+    expect(result).toEqual([2, 4, 6, 8, 10]);
+    expect(await mapWithConcurrency([], 3, async () => 1)).toEqual([]);
+  });
+
   it('continues with a structured warning when repository metadata fails', async () => {
-    const source: GitHubDataSource = {
+    const source = fakeSource({
       async getRepository() {
         throw new Error('permission denied');
       },
@@ -100,7 +109,7 @@ describe('GitHub adapter', () => {
       async listJobsForRunAttempt() {
         return jobs;
       },
-    };
+    });
     const result = await collectCurrentRun(source, reference);
     expect(result.identity.repositoryVisibility).toBe('unknown');
     expect(result.jobs).toHaveLength(1);

@@ -1,4 +1,4 @@
-import { type AnalysisReport } from '@greenci/core';
+import { type AnalysisReport, type ResolvedConfig, type WorkflowRunIdentity } from '@greenci/core';
 import { type GitHubDataSource } from './adapters/github.js';
 /** Side effects supplied by the GitHub Actions entrypoint. */
 export interface ActionIO {
@@ -15,6 +15,8 @@ export interface ActionEnvironment {
     readonly GITHUB_RUN_ID?: string;
     readonly GITHUB_RUN_ATTEMPT?: string;
     readonly GITHUB_JOB?: string;
+    readonly GITHUB_REF?: string;
+    readonly GITHUB_BASE_REF?: string;
     readonly RUNNER_TEMP?: string;
 }
 /** Injected dependencies used to keep action orchestration testable. */
@@ -23,5 +25,12 @@ export interface ActionDependencies {
     readonly now: () => Date;
     readonly workingDirectory: string;
 }
-/** Execute the Week 1 current-run Action workflow. */
+/**
+ * Fill pull-request identity from the runner environment when the workflow-run
+ * payload does not carry it, which happens for several pull-request triggers.
+ */
+export declare function withEventIdentity(identity: WorkflowRunIdentity, environment: ActionEnvironment): WorkflowRunIdentity;
+/** Choose the branch whose successful runs form the baseline. */
+export declare function resolveBaselineBranch(identity: WorkflowRunIdentity, config: ResolvedConfig): string | undefined;
+/** Execute the GreenCI Action end to end. */
 export declare function executeAction(io: ActionIO, environment: ActionEnvironment, dependencies: ActionDependencies): Promise<AnalysisReport>;

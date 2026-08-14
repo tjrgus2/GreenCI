@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "datasets": [
+    {
+      "id": "github-pricing",
+      "version": "2026.08",
+      "path": "data/github-pricing.json",
+      "source": "https://docs.github.com/en/billing/reference/actions-runner-pricing",
+      "unit": "usd-per-minute",
+      "uncertainty": "List prices are exact as published, but actual invoices depend on included minutes, discounts, and organization billing agreements that GreenCI cannot observe.",
+      "effectiveDate": "2026-07-01",
+      "retrievedAt": "2026-08-14",
+      "licenseNote": "Factual per-minute rates reproduced with source attribution. Rates are list prices for GitHub-hosted standard runners and exclude plan-included minutes, discounts, and organization billing agreements.",
+      "sha256": "9b227940f7f3ed957be30d36a6fc1785f34843a6646a2104f0d5846355139ab2"
+    },
+    {
+      "id": "runner-models",
+      "version": "2026.08",
+      "path": "data/runner-models.json",
+      "source": "https://www.cloudcarbonfootprint.org/docs/methodology combined with https://docs.github.com/en/actions/reference/runners/github-hosted-runners",
+      "unit": "watts",
+      "uncertainty": "Idle power, peak power, and memory power are triangular ranges rather than point values because GitHub does not publish host hardware or utilization.",
+      "effectiveDate": "2026-07-01",
+      "retrievedAt": "2026-08-14",
+      "licenseNote": "Modeled power envelopes derived from published open methodology coefficients. These are estimates for the virtual-machine share attributable to a job, not measurements of physical hardware.",
+      "sha256": "04596112e222ea051e544aba0917d9281ec5912fa83f5631fa800683b085a738"
+    },
+    {
+      "id": "carbon-intensity",
+      "version": "2026.08",
+      "path": "data/carbon-intensity.json",
+      "source": "https://ember-energy.org/data/electricity-data-explorer/",
+      "unit": "gCO2eq-per-kWh",
+      "uncertainty": "Annual average grid intensity expressed as a triangular range; the marginal intensity at execution time and the exact data-center region are unknown.",
+      "effectiveDate": "2026-01-01",
+      "retrievedAt": "2026-08-14",
+      "licenseNote": "Annual average grid carbon-intensity figures reproduced with source attribution. Values are yearly averages and do not reflect the marginal intensity at the moment a job executed.",
+      "sha256": "0171f878a57e6a37a7104d017ce51b0f3209d03b956d3bf790d71f5c626c9ab5"
+    }
+  ]
+}

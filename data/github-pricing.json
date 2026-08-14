@@ -1,0 +1,58 @@
+{
+  "datasetId": "github-pricing",
+  "version": "2026.08",
+  "modelVersion": "github-pricing@2026.08",
+  "currency": "USD",
+  "unit": "usd-per-minute",
+  "source": "https://docs.github.com/en/billing/reference/actions-runner-pricing",
+  "effectiveDate": "2026-07-01",
+  "retrievedAt": "2026-08-14",
+  "licenseNote": "Factual per-minute rates reproduced with source attribution. Rates are list prices for GitHub-hosted standard runners and exclude plan-included minutes, discounts, and organization billing agreements.",
+  "runners": [
+    {
+      "sku": "ubuntu-latest-2-core",
+      "runnerClass": "linux-x64",
+      "architecture": "x64",
+      "cores": 2,
+      "usdPerMinute": 0.008,
+      "standardPublicFree": true,
+      "source": "https://docs.github.com/en/billing/reference/actions-runner-pricing"
+    },
+    {
+      "sku": "ubuntu-latest-arm-2-core",
+      "runnerClass": "linux-arm64",
+      "architecture": "arm64",
+      "cores": 2,
+      "usdPerMinute": 0.005,
+      "standardPublicFree": true,
+      "source": "https://docs.github.com/en/billing/reference/actions-runner-pricing"
+    },
+    {
+      "sku": "windows-latest-2-core",
+      "runnerClass": "windows-x64",
+      "architecture": "x64",
+      "cores": 2,
+      "usdPerMinute": 0.016,
+      "standardPublicFree": true,
+      "source": "https://docs.github.com/en/billing/reference/actions-runner-pricing"
+    },
+    {
+      "sku": "macos-latest-3-core",
+      "runnerClass": "macos-arm64",
+      "architecture": "arm64",
+      "cores": 3,
+      "usdPerMinute": 0.08,
+      "standardPublicFree": false,
+      "source": "https://docs.github.com/en/billing/reference/actions-runner-pricing"
+    },
+    {
+      "sku": "macos-13-4-core",
+      "runnerClass": "macos-x64",
+      "architecture": "x64",
+      "cores": 4,
+      "usdPerMinute": 0.08,
+      "standardPublicFree": false,
+      "source": "https://docs.github.com/en/billing/reference/actions-runner-pricing"
+    }
+  ]
+}

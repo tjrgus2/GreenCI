@@ -30,8 +30,33 @@ describe('fixture replay', () => {
     expect(result.report.parallelism.averageConcurrency).toBe(1.875);
     expect(result.report.jobs).toHaveLength(3);
     expect(await readFile(outputPath, 'utf8')).toContain(
-      '"schemaVersion": "1.0.0"',
+      '"schemaVersion": "1.1.0"',
     );
+  });
+
+  it('reproduces a baseline regression offline and deterministically', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'greenci-cli-test-'));
+    temporaryDirectories.push(directory);
+    const fixture = resolve('fixtures/workflow-runs/baseline-regression.json');
+    const first = await replayFixture(fixture, join(directory, 'a.json'));
+    const second = await replayFixture(fixture, join(directory, 'b.json'));
+    expect(JSON.stringify(first.report)).toBe(JSON.stringify(second.report));
+
+    expect(first.report.baseline.status).toBe('ready');
+    expect(first.report.baseline.sampleCount).toBe(5);
+    expect(first.report.baseline.shapeSimilarity).toBe(1);
+    const runnerTime = first.report.baseline.metrics.find(
+      (metric) => metric.metric === 'runner-seconds',
+    );
+    expect(runnerTime?.baselineMedian).toBe(160);
+    expect(runnerTime?.verdict).toBe('regression');
+    expect(first.report.baseline.jobComparisons[0]?.label).toBe('Test');
+    const carbon = first.report.carbon;
+    expect(carbon?.region).toBe('KR');
+    expect(carbon?.operationalCarbonGrams.p05).toBeLessThanOrEqual(
+      carbon?.operationalCarbonGrams.p50 ?? 0,
+    );
+    expect(first.markdown).toContain('Top regressions');
   });
 
   it('preserves unknown repository visibility and its structured warning', async () => {

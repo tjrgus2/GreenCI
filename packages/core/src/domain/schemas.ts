@@ -75,9 +75,47 @@ export const AnalysisWarningSchema = z
       'FAILURE_LOG_PARSING_DISABLED',
       'SUMMARY_PUBLISH_FAILED',
       'ARTIFACT_UPLOAD_FAILED',
+      'CONFIG_INVALID',
+      'CONFIG_UNAVAILABLE',
+      'BASELINE_UNAVAILABLE',
+      'BASELINE_INSUFFICIENT_SAMPLES',
+      'WORKFLOW_SHAPE_CHANGED',
+      'RUNNER_MODEL_UNKNOWN',
+      'RUNNER_PRICE_UNKNOWN',
+      'CARBON_REGION_UNKNOWN',
+      'PR_COMMENT_UNAVAILABLE',
+      'PR_COMMENT_FAILED',
     ]),
     source: z.enum(['core', 'github-api', 'action']),
     message: z.string().min(1),
+  })
+  .strict();
+
+/** A declared `needs` edge reconstructed from the workflow definition. */
+export const WorkflowEdgeSchema = z
+  .object({
+    from: z.string().min(1),
+    to: z.string().min(1),
+  })
+  .strict();
+
+/** One historical successful run used as a baseline sample. */
+export const BaselineRunSampleSchema = z
+  .object({
+    runId: z.number().int().nonnegative(),
+    runAttempt: z.number().int().positive(),
+    headSha: z.string().min(1),
+    createdAt: z.string().datetime({ offset: true }).optional(),
+    jobs: z.array(NormalizedJobSchema),
+  })
+  .strict();
+
+/** Historical baseline collection result handed to the pure analyzer. */
+export const BaselineInputSchema = z
+  .object({
+    available: z.boolean(),
+    branch: z.string().min(1).optional(),
+    samples: z.array(BaselineRunSampleSchema).default([]),
   })
   .strict();
 
@@ -89,56 +127,11 @@ export const AnalyzeWorkflowInputSchema = z
     currentJobName: z.string().min(1).optional(),
     generatedAt: z.string().datetime({ offset: true }),
     warnings: z.array(AnalysisWarningSchema).default([]),
-  })
-  .strict();
-
-const TimelinePointSchema = z
-  .object({
-    at: z.string().datetime({ offset: true }),
-    concurrency: z.number().int().nonnegative(),
-  })
-  .strict();
-
-const CurrentMetricsSchema = z
-  .object({
-    wallClockSeconds: z.number().nonnegative(),
-    activeSeconds: z.number().nonnegative(),
-    runnerSeconds: z.number().nonnegative(),
-    jobsAnalyzed: z.number().int().nonnegative(),
-    stepsAnalyzed: z.number().int().nonnegative(),
-  })
-  .strict();
-
-const ParallelismSchema = z
-  .object({
-    peakConcurrency: z.number().int().nonnegative(),
-    averageConcurrency: z.number().nonnegative(),
-    runnerTimeToWallClockRatio: z.number().nonnegative(),
-    idleSeconds: z.number().nonnegative(),
-    timeline: z.array(TimelinePointSchema),
-  })
-  .strict();
-
-const ExclusionSchema = z
-  .object({
-    excludedJobIds: z.array(z.number().int().nonnegative()),
-    method: z.enum(['name', 'in-progress', 'none']),
-    heuristic: z.boolean(),
-  })
-  .strict();
-
-/** Week 1 JSON report schema. Later schema versions may add optional fields. */
-export const AnalysisReportSchema = z
-  .object({
-    schemaVersion: z.literal('1.0.0'),
-    generatedAt: z.string().datetime({ offset: true }),
-    greenciVersion: z.string(),
-    identity: WorkflowRunIdentitySchema,
-    current: CurrentMetricsSchema,
-    jobs: z.array(NormalizedJobSchema),
-    parallelism: ParallelismSchema,
-    analyzerExclusion: ExclusionSchema,
-    warnings: z.array(AnalysisWarningSchema),
+    config: z.unknown().optional(),
+    locale: z.enum(['en', 'ko']).optional(),
+    baselineRuns: z.number().int().min(1).max(20).optional(),
+    baseline: BaselineInputSchema.optional(),
+    edges: z.array(WorkflowEdgeSchema).optional(),
   })
   .strict();
 
@@ -147,5 +140,4 @@ export type WorkflowRunIdentity = z.infer<typeof WorkflowRunIdentitySchema>;
 export type NormalizedStep = z.infer<typeof NormalizedStepSchema>;
 export type NormalizedJob = z.infer<typeof NormalizedJobSchema>;
 export type AnalyzeWorkflowInput = z.infer<typeof AnalyzeWorkflowInputSchema>;
-export type AnalysisReport = z.infer<typeof AnalysisReportSchema>;
 export type AnalysisWarning = z.infer<typeof AnalysisWarningSchema>;
