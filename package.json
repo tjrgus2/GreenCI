@@ -31,7 +31,7 @@
     "data:verify": "tsx scripts/datasets.ts verify",
     "schemas:write": "tsx scripts/schemas.ts write",
     "schemas:verify": "tsx scripts/schemas.ts verify",
-    "versions:verify": "tsx scripts/versions.ts verify",
+    "versions:verify": "pnpm build && tsx scripts/versions.ts verify",
     "benchmark": "pnpm build && tsx scripts/benchmark.ts",
     "demo": "pnpm build && tsx scripts/demo.ts",
     "sbom:generate": "tsx scripts/sbom.ts",
