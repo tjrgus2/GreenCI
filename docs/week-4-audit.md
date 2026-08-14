@@ -91,24 +91,29 @@ should suggest `carbon.region`.
 The README configuration example is hand-maintained. Nothing fails when it
 drifts from `schemas/config.schema.json`.
 
-## Plan
+## Plan and outcome
 
-| Priority | Work                                                                                                                 | Finding       |
-| -------- | -------------------------------------------------------------------------------------------------------------------- | ------------- |
-| 1        | Apache-2.0 `LICENSE`                                                                                                 | F2            |
-| 2        | Full `.github/`: CI, CodeQL, dependency review, Scorecard, Dependabot, release, self-analysis, CODEOWNERS, templates | F1            |
-| 3        | Single version source with a consistency check; pin dependency ranges                                                | F3, F4        |
-| 4        | SBOM and artifact attestation in a least-privilege release workflow                                                  | F1            |
-| 5        | Rewrite `SECURITY.md` with a threat model                                                                            | F5            |
-| 6        | Counterfactual what-if engine (critical path versus resource optimization)                                           | product value |
-| 7        | Savings projection, guarded by observed run history                                                                  | product value |
-| 8        | `pnpm benchmark` with recorded results                                                                               | F8            |
-| 9        | `pnpm demo` offline before/after reproduction                                                                        | F9            |
-| 10       | Did-you-mean suggestions for configuration keys                                                                      | F10           |
-| 11       | README rewrite, `README.ko.md`, contributing, conduct, changelog, demo doc, ADRs                                     | F6            |
-| 12       | Test that every documented configuration example validates                                                           | F11           |
-| 13       | Repository description and topics; `action.yml` metadata                                                             | F7            |
-| 14       | Live validation and a release candidate                                                                              | —             |
+| Priority | Work                                                                                                                 | Finding       | Outcome                                                               |
+| -------- | -------------------------------------------------------------------------------------------------------------------- | ------------- | --------------------------------------------------------------------- |
+| 1        | Apache-2.0 `LICENSE`                                                                                                 | F2            | Done — GitHub now detects the licence                                 |
+| 2        | Full `.github/`: CI, CodeQL, dependency review, Scorecard, Dependabot, release, self-analysis, CODEOWNERS, templates | F1            | Done — all five workflows green                                       |
+| 3        | Single version source with a consistency check; pin dependency ranges                                                | F3, F4        | Done — `pnpm versions:verify`                                         |
+| 4        | SBOM and artifact attestation in a least-privilege release workflow                                                  | F1            | Done — verified on `v1.0.0-rc.2`                                      |
+| 5        | Rewrite `SECURITY.md` with a threat model                                                                            | F5            | Done — 14 attack surfaces with controls                               |
+| 6        | Counterfactual what-if engine                                                                                        | product value | Done — [ADR 0006](adr/0006-counterfactual-what-if.md), live-validated |
+| 7        | Savings projection                                                                                                   | product value | **Declined** — [ADR 0007](adr/0007-no-savings-projection.md)          |
+| 8        | `pnpm benchmark` with recorded results                                                                               | F8            | Done — [performance.md](performance.md)                               |
+| 9        | `pnpm demo` offline before/after reproduction                                                                        | F9            | Done — asserted by tests                                              |
+| 10       | Did-you-mean suggestions for configuration keys                                                                      | F10           | Done                                                                  |
+| 11       | README rewrite, `README.ko.md`, contributing, conduct, changelog, demo doc, ADRs                                     | F6            | Done — ADRs 0001-0007                                                 |
+| 12       | Test that every documented configuration example validates                                                           | F11           | Done                                                                  |
+| 13       | Repository description and topics; `action.yml` metadata                                                             | F7            | Done                                                                  |
+| 14       | Live validation and a release candidate                                                                              | —             | Done — [week-4-validation.md](week-4-validation.md)                   |
 
-A CI efficiency score was considered and rejected; see
-[adr/0005-no-composite-efficiency-score.md](adr/0005-no-composite-efficiency-score.md).
+Two proposed features were considered and declined with reasoning: a composite CI
+efficiency score ([ADR 0005](adr/0005-no-composite-efficiency-score.md)) and a
+monthly savings projection ([ADR 0007](adr/0007-no-savings-projection.md)).
+
+Five bugs surfaced during Week 4, three of them by security tooling that did not
+exist before it. They are recorded in
+[week-4-validation.md](week-4-validation.md).
