@@ -5,6 +5,7 @@
  * produces has to be actionable: naming the offending key is the minimum, and
  * naming the key the author probably meant is what actually saves them time.
  */
+import { createTranslator, type Translator } from '../reporting/i18n/index.js';
 
 /** Levenshtein edit distance, bounded so a long pair exits early. */
 export function editDistance(left: string, right: string): number {
@@ -58,13 +59,20 @@ export function closestKey(
   return best?.candidate;
 }
 
-/** Format one unknown key with a suggestion when a plausible one exists. */
+/**
+ * Format one unknown key with a suggestion when a plausible one exists.
+ *
+ * The translator defaults to English so that callers with no locale in hand —
+ * and the reported `message` a machine consumer might read — keep the wording
+ * they had before locales existed.
+ */
 export function describeUnknownKey(
   key: string,
   candidates: readonly string[],
+  translate: Translator = createTranslator('en'),
 ): string {
   const suggestion = closestKey(key, candidates);
   return suggestion === undefined
     ? `\`${key}\``
-    : `\`${key}\` (did you mean \`${suggestion}\`?)`;
+    : translate('config.didYouMean', { key, suggestion });
 }

@@ -254,6 +254,15 @@ export const en = {
   'source.Workflow needs graph': 'Workflow needs graph',
   'source.Interval overlap fallback': 'Interval overlap fallback',
 
+  // Configuration rejection. Unlike the warnings above, this message names keys
+  // that appear nowhere else in the report, so it is composed in the reader's
+  // locale at validation time rather than translated at render time.
+  'config.rejected':
+    'The repository GreenCI configuration was rejected and bundled defaults are used instead: {issues}',
+  'config.unknownKeys': 'unknown key(s) {keys}',
+  'config.didYouMean': '`{key}` (did you mean `{suggestion}`?)',
+  'config.root': '(root)',
+
   'whatIf.disclaimer':
     'Counterfactual estimates recomputed from GreenCI models over hypothetically shortened jobs. They are not measured savings and not a guarantee that the change is achievable.',
   'carbon.measurementDisclaimer':

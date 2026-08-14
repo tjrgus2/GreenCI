@@ -95,6 +95,19 @@ An unrecognized key still falls back rather than throwing, because a custom rule
 or a quoted upstream GitHub error has no translation to find. Warnings forwarded
 from an adapter can embed such an error, and GreenCI does not paraphrase it.
 
+`CONFIG_INVALID` from the configuration schema is the one deliberate exception.
+Its message names the rejected keys and the did-you-mean suggestion for each, and
+neither survives anywhere else in the report, so there is nothing for a
+render-time translation to rebuild from. It is composed in the reader's locale at
+validation time instead, including Zod's own issue text through the matching
+`z.locales` error map, passed per parse so that one process can analyze different
+locales without leaking global state. The `code` remains the stable
+machine-readable half, which is what a consumer should branch on.
+
+The locale for that message comes from the Action input first, then from the
+`locale` scalar of the very file being rejected — a single scalar is trustworthy
+even when the document as a whole is not — then English.
+
 ## Generated artifacts
 
 Two committed outputs are generated and verified in the same way the Action

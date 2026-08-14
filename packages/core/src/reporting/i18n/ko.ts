@@ -247,6 +247,12 @@ export const ko: Messages = {
   'source.Workflow needs graph': '워크플로 needs 그래프',
   'source.Interval overlap fallback': '구간 중첩 기반 대체 추정',
 
+  'config.rejected':
+    '저장소 GreenCI 설정이 거부되어 내장 기본값을 사용합니다: {issues}',
+  'config.unknownKeys': '알 수 없는 키 {keys}',
+  'config.didYouMean': '`{key}` (`{suggestion}`을(를) 의도하신 것 같습니다)',
+  'config.root': '(최상위)',
+
   'whatIf.disclaimer':
     '반사실 추정값은 특정 Job이 가정상 짧아졌을 때를 GreenCI 모델로 다시 계산한 결과입니다. 실제로 측정된 절감량이 아니며, 그 개선이 달성 가능하다는 보장도 아닙니다.',
   'carbon.measurementDisclaimer':

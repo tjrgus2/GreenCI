@@ -3,6 +3,7 @@ import {
   CORE_WARNING_CODES,
   analyzeWorkflow,
 } from '../src/analysis/analyze.js';
+import { resolveConfig } from '../src/domain/config.js';
 import type { AnalysisReport } from '../src/domain/report.js';
 import { BUILT_IN_RULES } from '../src/recommendation/rules.js';
 import { EVIDENCE_SOURCES } from '../src/recommendation/types.js';
@@ -248,5 +249,18 @@ describe('Korean report rendering', () => {
     );
     expect(koReport.locale).toBe('ko');
     expect(enReport.locale).toBe('en');
+  });
+
+  it('localizes CONFIG_INVALID at validation time, the one documented exception', () => {
+    // Its message names the rejected keys and the suggestions for them, and
+    // neither appears anywhere else in the report, so there is nothing for a
+    // render-time translation to rebuild from. The `code` stays the stable
+    // machine-readable half.
+    const rejected = (locale: 'en' | 'ko'): string =>
+      resolveConfig({ locale, carbon: { regoin: 'KR' } }).warnings[0]
+        ?.message ?? '';
+    expect(rejected('ko')).toContain('알 수 없는 키');
+    expect(rejected('en')).toContain('unknown key(s)');
+    expect(rejected('ko')).not.toBe(rejected('en'));
   });
 });

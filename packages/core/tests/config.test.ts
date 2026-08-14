@@ -94,6 +94,54 @@ describe('configuration resolution', () => {
     const result = resolveConfig({ baseline: { 'successful-runs': 999 } });
     expect(result.warnings[0]?.message).toContain('baseline.successful-runs');
   });
+});
+
+describe('rejection message locale', () => {
+  const message = (raw: unknown, overrides = {}): string =>
+    resolveConfig(raw, overrides).warnings[0]?.message ?? '';
+
+  it('answers in Korean when the rejected file itself asked for Korean', () => {
+    // The document that would have declared the locale is the one being
+    // rejected, so the scalar is read even though the whole file failed.
+    const korean = message({ locale: 'ko', carbon: { regoin: 'KR' } });
+    expect(korean).toContain('저장소 GreenCI 설정이 거부되어');
+    expect(korean).toContain('알 수 없는 키');
+    expect(korean).toContain('`region`을(를) 의도하신 것 같습니다');
+    expect(korean).not.toContain('did you mean');
+  });
+
+  it('lets an Action input override the locale the file asked for', () => {
+    expect(message({ locale: 'ko', verison: 1 }, { locale: 'en' })).toContain(
+      'did you mean `version`?',
+    );
+    expect(message({ verison: 1 }, { locale: 'ko' })).toContain(
+      '의도하신 것 같습니다',
+    );
+  });
+
+  it("translates Zod's own value messages, not only GreenCI's framing", () => {
+    expect(
+      message({ locale: 'ko', baseline: { 'successful-runs': 999 } }),
+    ).toContain('20 이하여야 합니다');
+    expect(message({ baseline: { 'successful-runs': 999 } })).toContain(
+      'Too big',
+    );
+  });
+
+  it('translates the root location and the no-suggestion case', () => {
+    const korean = message({ locale: 'ko', zzzzqqqwwww: true });
+    expect(korean).toContain('(최상위)');
+    expect(korean).toContain('`zzzzqqqwwww`');
+    expect(korean).not.toContain('의도하신');
+  });
+
+  it('falls back to English when the declared locale is not a known one', () => {
+    for (const locale of ['de', 42, null, ['ko']]) {
+      expect(message({ locale, verison: 1 }), String(locale)).toContain(
+        'unknown key(s)',
+      );
+    }
+  });
 
   it('rejects an inconsistent triangular range', () => {
     expect(

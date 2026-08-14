@@ -1,8 +1,25 @@
-import { z } from 'zod';
+import { locales, z } from 'zod';
 import type { PolicyMode, PolicyRule } from '../policy/index.js';
+import {
+  createTranslator,
+  type Locale,
+  type Translator,
+} from '../reporting/i18n/index.js';
 import { canonicalHash } from '../util/canonical.js';
 import type { AnalysisWarning } from './schemas.js';
 import { describeUnknownKey } from './suggest.js';
+
+/**
+ * Zod's own issue text, per locale.
+ *
+ * Built once at module load — these are pure factories, so this stays a pure
+ * module — and passed per parse. Setting the locale globally with `z.config`
+ * would leak across analyses that ask for different locales in one process.
+ */
+const ZOD_ERROR_MAPS: Readonly<Record<Locale, z.core.$ZodErrorMap>> = {
+  en: locales.en().localeError,
+  ko: locales.ko().localeError,
+};
 
 const TriangularConfigSchema = z
   .object({
@@ -399,8 +416,13 @@ export interface ConfigResolution {
   readonly warnings: AnalysisWarning[];
 }
 
-function issueLocation(path: readonly PropertyKey[]): string {
-  return path.length === 0 ? '(root)' : path.map(String).join('.');
+function issueLocation(
+  path: readonly PropertyKey[],
+  translate: Translator,
+): string {
+  return path.length === 0
+    ? translate('config.root')
+    : path.map(String).join('.');
 }
 
 /**
@@ -455,20 +477,49 @@ function acceptedKeysAt(path: readonly PropertyKey[]): string[] {
  * point of a strict configuration schema is to catch typos, so an unrecognized
  * key names itself and, when one is plausible, the key that was probably meant.
  */
-function describeIssues(issues: readonly z.core.$ZodIssue[]): string {
+function describeIssues(
+  issues: readonly z.core.$ZodIssue[],
+  translate: Translator,
+): string {
   return issues
     .slice(0, 3)
     .map((issue) => {
-      const location = issueLocation(issue.path);
+      const location = issueLocation(issue.path, translate);
       if (issue.code === 'unrecognized_keys') {
         const candidates = acceptedKeysAt(issue.path);
-        return `${location}: unknown key(s) ${issue.keys
-          .map((key) => describeUnknownKey(key, candidates))
-          .join(', ')}`;
+        const keys = issue.keys
+          .map((key) => describeUnknownKey(key, candidates, translate))
+          .join(', ');
+        return `${location}: ${translate('config.unknownKeys', { keys })}`;
       }
       return `${location}: ${issue.message}`;
     })
     .join('; ');
+}
+
+/**
+ * Which locale to write the rejection message in.
+ *
+ * The file that would have declared `locale` is the one being rejected, so its
+ * own value is read defensively: a single scalar is trustworthy even when the
+ * document as a whole is not. An Action input still wins, matching the
+ * precedence every other setting follows.
+ */
+function messageLocale(rawFile: unknown, overrides: ConfigOverrides): Locale {
+  if (overrides.locale !== undefined) {
+    return overrides.locale;
+  }
+  if (
+    typeof rawFile === 'object' &&
+    rawFile !== null &&
+    !Array.isArray(rawFile)
+  ) {
+    const declared = (rawFile as Record<string, unknown>)['locale'];
+    if (declared === 'en' || declared === 'ko') {
+      return declared;
+    }
+  }
+  return 'en';
 }
 
 /**
@@ -484,14 +535,20 @@ export function resolveConfig(
   let base = DEFAULT_CONFIG;
 
   if (rawFile !== undefined && rawFile !== null) {
-    const parsed = GreenCIConfigFileSchema.safeParse(rawFile);
+    const locale = messageLocale(rawFile, overrides);
+    const parsed = GreenCIConfigFileSchema.safeParse(rawFile, {
+      error: ZOD_ERROR_MAPS[locale],
+    });
     if (parsed.success) {
       base = toResolved(parsed.data);
     } else {
+      const translate = createTranslator(locale);
       warnings.push({
         code: 'CONFIG_INVALID',
         source: 'core',
-        message: `The repository GreenCI configuration was rejected and bundled defaults are used instead: ${describeIssues(parsed.error.issues)}`,
+        message: translate('config.rejected', {
+          issues: describeIssues(parsed.error.issues, translate),
+        }),
       });
     }
   }
