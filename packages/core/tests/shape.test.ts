@@ -48,6 +48,33 @@ describe('logical job identity', () => {
       matrixSignature: undefined,
     });
   });
+
+  it('treats an unbalanced or nested parenthesis as part of the name', () => {
+    expect(
+      deriveLogicalJobId('Build (unclosed').matrixSignature,
+    ).toBeUndefined();
+    expect(
+      deriveLogicalJobId('Build ((nested))').matrixSignature,
+    ).toBeUndefined();
+    expect(deriveLogicalJobId('Build ()')).toEqual({
+      logicalJobId: 'build',
+      matrixSignature: '',
+    });
+    expect(deriveLogicalJobId('Test (20)   ')).toEqual({
+      logicalJobId: 'test',
+      matrixSignature: '20',
+    });
+  });
+
+  it('parses a pathological name in linear time', () => {
+    // A regular expression with `.*?\s*\(` backtracks polynomially here; job
+    // names come from the API, so an author could supply this.
+    const hostile = `${'a '.repeat(20_000)}(`;
+    const started = process.hrtime.bigint();
+    expect(deriveLogicalJobId(hostile).matrixSignature).toBeUndefined();
+    const elapsedMs = Number(process.hrtime.bigint() - started) / 1e6;
+    expect(elapsedMs).toBeLessThan(250);
+  });
 });
 
 describe('workflow shape fingerprint', () => {

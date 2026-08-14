@@ -3,3 +3,15 @@ packages:
 
 allowBuilds:
   esbuild: true
+
+# Transitive advisories that the direct dependency has not yet picked up. Each is
+# pinned forward within its own major, so the shipped Action bundle carries the
+# patched code rather than waiting on an upstream release. Remove an entry once
+# the direct dependency requires the patched version itself; `pnpm audit` in CI
+# is what tells you it is still needed.
+overrides:
+  brace-expansion@^2: ^2.1.4
+  brace-expansion@^5: ^5.0.9
+  undici@^6: ^6.28.0
+  postcss@^8: ^8.5.26
+  nanoid@^3: ^3.3.18

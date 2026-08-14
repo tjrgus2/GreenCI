@@ -34,19 +34,37 @@ function normalizeToken(value: string): string {
 /**
  * Split a GitHub job API name into its logical workflow job and its matrix
  * signature. GitHub renders matrix jobs as `name (value, value)`.
+ *
+ * Deliberately hand-parsed rather than matched with a regular expression. A
+ * pattern like `^(.*?)\s*\((...)\)\s*$` backtracks polynomially on a name
+ * containing many spaces, and job names come from the API — a pull-request
+ * author controls them. This scan is linear.
  */
 export function deriveLogicalJobId(apiName: string): {
   logicalJobId: string;
   matrixSignature: string | undefined;
 } {
-  const match = /^(?<base>.*?)\s*\((?<matrix>[^()]*)\)\s*$/u.exec(apiName);
-  const base = match?.groups?.['base'];
-  const matrix = match?.groups?.['matrix'];
-  if (base === undefined || matrix === undefined || base.length === 0) {
-    return {
-      logicalJobId: normalizeToken(apiName),
-      matrixSignature: undefined,
-    };
+  const whole = {
+    logicalJobId: normalizeToken(apiName),
+    matrixSignature: undefined,
+  };
+  const trimmed = apiName.trimEnd();
+  if (!trimmed.endsWith(')')) {
+    return whole;
+  }
+  const open = trimmed.lastIndexOf('(');
+  // `open === 0` means the whole name is parenthesized, which is a job named
+  // `(something)` rather than a matrix variant.
+  if (open <= 0) {
+    return whole;
+  }
+  const matrix = trimmed.slice(open + 1, -1);
+  if (matrix.includes('(') || matrix.includes(')')) {
+    return whole;
+  }
+  const base = trimmed.slice(0, open).trimEnd();
+  if (base.length === 0) {
+    return whole;
   }
   return {
     logicalJobId: normalizeToken(base),

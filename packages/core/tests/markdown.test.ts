@@ -15,6 +15,7 @@ import {
 } from '../src/reporting/format.js';
 import { renderJobSummary } from '../src/reporting/markdown.js';
 import {
+  REPORT_MARKER_PREFIX,
   renderPullRequestComment,
   reportMarker,
 } from '../src/reporting/pr-comment.js';
@@ -200,10 +201,20 @@ describe('pull-request comment', () => {
   });
 
   it('neutralizes a hostile workflow path inside the marker', () => {
-    const marker = reportMarker('.github/workflows/a --> <script>.yml');
-    expect(marker.endsWith('-->')).toBe(true);
-    expect(marker).not.toContain('<script>');
-    expect(marker.match(/-->/gu)).toHaveLength(1);
+    const hostile = '.github/workflows/a --> <script>alert(1)</script>.yml';
+    const marker = reportMarker(hostile);
+    const prefix = `${REPORT_MARKER_PREFIX} workflow="`;
+    const suffix = '" -->';
+    expect(marker.startsWith(prefix)).toBe(true);
+    expect(marker.endsWith(suffix)).toBe(true);
+
+    // The path is allowlisted rather than escaped, so no character that could
+    // close the HTML comment or open a tag can survive.
+    const embedded = marker.slice(prefix.length, -suffix.length);
+    expect(embedded).toMatch(/^[\w./@+-]*$/u);
+    for (const character of ['<', '>', '!', '"', ' ']) {
+      expect(embedded, character).not.toContain(character);
+    }
   });
 
   it('shows an absent z-score rather than 0.00 when no robust scale exists', () => {
