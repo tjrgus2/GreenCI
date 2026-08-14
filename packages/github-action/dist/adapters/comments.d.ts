@@ -1,4 +1,4 @@
-import { type AnalysisWarning } from '@greenci/core';
+import type { AnalysisWarning } from '@greenci/core';
 import type { GitHubDataSource } from './github.js';
 /** The default GitHub Actions bot identity used when `users` is unreadable. */
 export declare const DEFAULT_BOT_LOGIN = "github-actions[bot]";
@@ -15,6 +15,12 @@ export interface CommentRequest {
     readonly pullRequestNumber: number;
     readonly body: string;
     readonly updateExisting: boolean;
+    /**
+     * The workflow-scoped GreenCI marker. Scoping matters: a repository can run
+     * GreenCI from several workflows against one pull request, and each must own
+     * its own comment.
+     */
+    readonly marker: string;
 }
 /**
  * Create or update exactly one GreenCI comment.

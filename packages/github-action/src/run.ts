@@ -7,6 +7,7 @@ import {
   analyzeWorkflow,
   renderJobSummary,
   renderPullRequestComment,
+  reportMarker,
   resolveConfig,
   type AnalysisReport,
   type AnalysisWarning,
@@ -340,6 +341,7 @@ export async function executeAction(
         topHotspots: resolution.config.report.topHotspots,
       }),
       updateExisting: resolution.config.report.updateExistingComment,
+      marker: reportMarker(identity.workflowPath),
     });
     for (const warning of publication.warnings) {
       io.warning(`[GreenCI] WARN  report.comment code=${warning.code}`);

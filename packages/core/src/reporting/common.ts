@@ -12,8 +12,20 @@ import {
 } from './format.js';
 import type { MessageKey, Translator } from './i18n/index.js';
 
-/** Hidden marker that makes the GreenCI pull-request comment idempotent. */
-export const REPORT_MARKER = '<!-- greenci-report:v1 -->';
+/** Shared prefix of every GreenCI comment marker. */
+export const REPORT_MARKER_PREFIX = '<!-- greenci-report:v1';
+
+/**
+ * Hidden marker that makes the GreenCI pull-request comment idempotent.
+ *
+ * The marker is scoped to the analyzed workflow, because a repository may run
+ * GreenCI from more than one workflow against the same pull request. An
+ * unscoped marker made those installations overwrite each other's comment.
+ */
+export function reportMarker(workflowPath: string): string {
+  const safePath = workflowPath.replaceAll(/[^\w./@+-]/gu, '_').slice(0, 200);
+  return `${REPORT_MARKER_PREFIX} workflow="${safePath}" -->`;
+}
 
 type Baseline = AnalysisReport['baseline'];
 type MetricComparison = Baseline['metrics'][number];

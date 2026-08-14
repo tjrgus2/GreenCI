@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { REPORT_MARKER, type AnalysisWarning } from '@greenci/core';
+import type { AnalysisWarning } from '@greenci/core';
 import { describeError, isNotFoundError, isPermissionError } from './errors.js';
 import type { GitHubDataSource } from './github.js';
 
@@ -34,6 +34,12 @@ export interface CommentRequest {
   readonly pullRequestNumber: number;
   readonly body: string;
   readonly updateExisting: boolean;
+  /**
+   * The workflow-scoped GreenCI marker. Scoping matters: a repository can run
+   * GreenCI from several workflows against one pull request, and each must own
+   * its own comment.
+   */
+  readonly marker: string;
 }
 
 function ownsComment(
@@ -84,7 +90,7 @@ export async function publishPullRequestComment(
       if (parsed.success) {
         existingId = parsed.data.find(
           (comment) =>
-            (comment.body ?? '').includes(REPORT_MARKER) &&
+            (comment.body ?? '').includes(request.marker) &&
             ownsComment(comment, authenticatedLogin),
         )?.id;
       }

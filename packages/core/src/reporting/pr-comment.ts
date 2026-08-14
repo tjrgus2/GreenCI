@@ -1,11 +1,11 @@
 import type { AnalysisReport } from '../domain/report.js';
 import {
-  REPORT_MARKER,
   renderConfidenceLine,
   renderEstimationDetails,
   renderHeadline,
   renderMetricTable,
   renderRegressionTable,
+  reportMarker,
 } from './common.js';
 import {
   escapeMarkdown,
@@ -16,7 +16,7 @@ import {
 import { createTranslator } from './i18n/index.js';
 import { renderPolicyBadge, renderRecommendationsSection } from './sections.js';
 
-export { REPORT_MARKER } from './common.js';
+export { REPORT_MARKER_PREFIX, reportMarker } from './common.js';
 
 /** A compact critical-path line, or nothing when it is unavailable. */
 function renderCriticalPathBrief(
@@ -56,7 +56,7 @@ export function renderPullRequestComment(
   const translate = createTranslator(report.locale);
   const limit = options.topHotspots ?? 5;
   return [
-    REPORT_MARKER,
+    reportMarker(report.identity.workflowPath),
     '',
     `# ${translate('report.title')}`,
     '',
