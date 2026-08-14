@@ -5,6 +5,51 @@ claim. Every number in a report is reproducible from the report itself: it
 records the GreenCI version, report schema version, configuration hash, dataset
 versions, and simulation seed.
 
+## 0. What is measured, what is not
+
+The single most important thing to understand about GreenCI is which of its
+numbers are observations and which are model output. Every input is classified
+here, and the classification is why carbon is published as an interval rather
+than a number.
+
+| Quantity                                                         | Class                                               | Source                                                                 |
+| ---------------------------------------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------- |
+| Job and step start and completion times                          | **Measured**                                        | GitHub Actions API                                                     |
+| Job conclusion, run attempt, run identity                        | **Measured**                                        | GitHub Actions API                                                     |
+| Wall-clock time, runner time, queue time, idle gaps, concurrency | **Derived** (arithmetic on measured timestamps)     | GreenCI                                                                |
+| Runner labels and runner class                                   | **Platform metadata**                               | GitHub Actions API, normalized by GreenCI                              |
+| `needs` graph and matrix declarations                            | **Platform metadata**                               | The workflow definition at the analyzed commit                         |
+| Baseline sample                                                  | **Measured** (of other runs)                        | GitHub Actions API                                                     |
+| Median, MAD, modified z-score, verdicts                          | **Derived**                                         | GreenCI                                                                |
+| Per-minute runner price                                          | **Dataset**                                         | `data/github-pricing.json`, published vendor rates                     |
+| Billable minutes, list-price equivalent                          | **Derived**                                         | GreenCI, per-job rounding                                              |
+| Actual invoice cost                                              | **Not produced**                                    | Plan credits and billing agreements are invisible to an Action         |
+| Runner idle power, peak power, memory power                      | **Estimated model**                                 | `data/runner-models.json`, ranges from published methodology           |
+| CPU utilization                                                  | **Modeled**                                         | Triangular distribution, user-configurable                             |
+| Power usage effectiveness (PUE)                                  | **Modeled / user configured**                       | Triangular distribution, defaults from published industry ranges       |
+| Data-centre region                                               | **User configured**, otherwise a disclosed fallback | `.greenci.yml`; GitHub does not publish it and GreenCI never infers it |
+| Grid carbon intensity                                            | **Dataset**                                         | `data/carbon-intensity.json`, annual averages with a range             |
+| Energy, operational carbon (p05/p50/p95)                         | **Modeled estimate**                                | Monte Carlo over the rows above                                        |
+| Data-quality score and grade                                     | **Derived**                                         | Weighted over how much of the above was known                          |
+| Counterfactual what-if figures                                   | **Counterfactual estimate**                         | The same models re-run over hypothetical durations                     |
+
+GreenCI does not measure watts, does not read a power meter, does not know which
+physical host or data centre executed a job, and does not know your invoice. Where
+a value is unknown it is excluded and named in a warning, never substituted.
+
+### Why Monte Carlo
+
+Six of the carbon inputs above are ranges, not values. Propagating ranges through
+a multiplication chain by hand gives either a false point estimate (multiply the
+modes) or a uselessly wide bound (multiply the extremes). Sampling the
+distributions jointly gives the actual shape of the result, which is what p05,
+p50, and p95 report.
+
+Making it deterministic — seeding from run identity, configuration hash, and model
+version — means the interval is reproducible rather than merely plausible: re-run
+the analysis and you get the same three numbers, and the report prints the seed so
+you can check.
+
 ## 1. Runtime
 
 | Metric              | Definition                                                  |
