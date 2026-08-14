@@ -180,9 +180,9 @@ enough samples, and the workflow shape still matches. A single slow run in your
 history can't trip it.
 
 Shape matching runs first. GreenCI fingerprints job ids, `needs` edges, step keys,
-and runner classes, and throws out historical runs that differ by more than the
-configured similarity — otherwise the statistics compare a workflow to a different
-workflow and produce a confident-looking number about nothing.
+and runner classes, and drops historical runs that differ by more than the
+configured similarity. Without that step the statistics would be comparing two
+different workflows.
 
 When there's no usable scale (identical samples, so MAD is zero) it falls back to
 IQR, then to a plain percentage comparison with confidence forced to low. Every
