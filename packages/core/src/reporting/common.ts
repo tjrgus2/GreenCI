@@ -60,6 +60,17 @@ export function translateVerdict(translate: Translator, value: string): string {
   return translate(verdictKeys[value] ?? 'verdict.inconclusive');
 }
 
+/**
+ * Render a modified z-score, or an explicit absence when no robust scale
+ * existed. Printing `0.00` there would read as "no deviation" next to a large
+ * percentage change, which is the opposite of what happened.
+ */
+export function formatZScore(comparison: MetricComparison): string {
+  return comparison.scaleMethod === 'unavailable'
+    ? '—'
+    : formatNumber(comparison.modifiedZScore, 2);
+}
+
 /** One sentence answering whether CI improved or regressed. */
 export function renderHeadline(
   report: AnalysisReport,
@@ -228,7 +239,7 @@ export function renderRegressionTable(
       formatDuration(entry.baselineMedian),
       formatDuration(entry.current),
       formatSignedPercent(entry.percentChange),
-      formatNumber(entry.modifiedZScore, 2),
+      formatZScore(entry),
     ]);
   if (rows.length === 0) {
     return [`_${translate('label.none')}_`];

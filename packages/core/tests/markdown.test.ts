@@ -178,6 +178,38 @@ describe('pull-request comment', () => {
     expect(markdown).toContain('🌱 GreenCI Report');
   });
 
+  it('shows an absent z-score rather than 0.00 when no robust scale exists', () => {
+    const uniformBaseline = analyzeWorkflow({
+      identity,
+      jobs: baselineJobs(300),
+      generatedAt: '2026-07-20T00:10:00.000Z',
+      baseline: {
+        available: true,
+        branch: 'main',
+        samples: [100, 100, 100, 100, 100].map((seconds, index) => ({
+          runId: index + 1,
+          runAttempt: 1,
+          headSha: `sha-${index}`,
+          jobs: baselineJobs(seconds),
+        })),
+      },
+    });
+    const runnerTime = uniformBaseline.baseline.metrics.find(
+      (metric) => metric.metric === 'runner-seconds',
+    );
+    expect(runnerTime?.scaleMethod).toBe('unavailable');
+    expect(runnerTime?.modifiedZScore).toBe(0);
+    expect(runnerTime?.verdict).toBe('regression');
+
+    const markdown = renderPullRequestComment(uniformBaseline);
+    const regressionRow = markdown
+      .split('\n')
+      .find((line) => line.includes('`build`'));
+    expect(regressionRow).toContain('▲ 200.0%');
+    expect(regressionRow).not.toContain('0.00');
+    expect(regressionRow?.endsWith('— |')).toBe(true);
+  });
+
   it('answers regression, size, cause, and method in order', () => {
     const markdown = renderPullRequestComment(report(), { topHotspots: 3 });
     const headline = markdown.indexOf('Runner time increased by');
