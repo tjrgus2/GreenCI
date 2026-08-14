@@ -30,15 +30,17 @@ The whole gate is one command: `pnpm verify:all`.
 ## GreenCI's own CI, running for the first time
 
 Before Week 4 there was no `.github/` directory at all — every gate had only ever
-run on one developer's machine. All five workflows now pass:
+run on one developer's machine. Four passed immediately; the fifth only ran for
+the first time once the repository had a pull request, and needed a repository
+setting before it could work at all:
 
-| Workflow                                                                                        | Result                                                             |
-| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| [CI](https://github.com/tjrgus2/GreenCI/actions/workflows/ci.yml)                               | pass                                                               |
-| [CodeQL](https://github.com/tjrgus2/GreenCI/actions/workflows/codeql.yml)                       | pass, `security-and-quality` queries                               |
-| [Dependency review](https://github.com/tjrgus2/GreenCI/actions/workflows/dependency-review.yml) | configured, `fail-on-severity: moderate` with a copyleft deny-list |
-| [OpenSSF Scorecard](https://github.com/tjrgus2/GreenCI/actions/workflows/scorecard.yml)         | pass, results published to the Security tab                        |
-| [GreenCI self-analysis](https://github.com/tjrgus2/GreenCI/actions/workflows/greenci-self.yml)  | pass, non-blocking                                                 |
+| Workflow                                                                                        | Result                                                                   |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| [CI](https://github.com/tjrgus2/GreenCI/actions/workflows/ci.yml)                               | pass                                                                     |
+| [CodeQL](https://github.com/tjrgus2/GreenCI/actions/workflows/codeql.yml)                       | pass, `security-and-quality` queries                                     |
+| [Dependency review](https://github.com/tjrgus2/GreenCI/actions/workflows/dependency-review.yml) | pass, `fail-on-severity: moderate` with a copyleft deny-list — see below |
+| [OpenSSF Scorecard](https://github.com/tjrgus2/GreenCI/actions/workflows/scorecard.yml)         | pass, results published to the Security tab                              |
+| [GreenCI self-analysis](https://github.com/tjrgus2/GreenCI/actions/workflows/greenci-self.yml)  | pass, non-blocking                                                       |
 
 CI immediately earned its keep by catching two bugs that a clean checkout exposes
 and a warm working tree hides. See "Bugs found" below.
@@ -167,20 +169,37 @@ correctly and the tag is left in place as evidence.
    _Regression guard:_ `pnpm audit` now reports no known vulnerabilities, and
    dependency review blocks a new moderate-or-higher advisory in a pull request.
 
-Findings 3, 4, and 5 all came from security tooling that did not exist before
-Week 4, which is the strongest argument for having added it.
+6. **Dependency review was configured but could not run.** It only triggers on a
+   pull request, and the repository had none until branch protection forced one,
+   so the workflow sat unexercised while the validation record described it as
+   "configured" — accurate, and easy to mistake for working. Its first real run
+   failed outright: `Dependency review is not supported on this repository`,
+   because the repository's Dependency graph was disabled. Enabling it in
+   repository settings fixed it; the setting is not reachable through the REST
+   API, so it needed the owner.
+   _Regression guard:_ the workflow now runs on every pull request, and a failure
+   there is visible rather than silent. Note it is not in the required-status-check
+   set, so it reports rather than blocks.
+
+Findings 3 through 6 all came from security tooling that did not exist before
+Week 4, which is the strongest argument for having added it. Finding 6 is the
+sharpest of them: the tool had been counted as working purely because it had been
+written.
 
 ## Remaining Scorecard findings
 
 Not defects, and each is recorded rather than silently ignored:
 
-| Check                | Score | Status                                                                                                                                                       |
-| -------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Vulnerabilities`    | was 3 | **fixed** — now clean                                                                                                                                        |
-| `Branch-Protection`  | 0     | Not enabled on `main`. Recommended before accepting outside contributions; deliberately left off while a single maintainer is pushing release work directly. |
-| `Code-Review`        | 0     | 0 of 16 changesets reviewed — inherent to solo development on `main`.                                                                                        |
-| `Maintained`         | 0     | Repository is under 90 days old. Resolves with time.                                                                                                         |
-| `CII-Best-Practices` | 0     | Requires registering for an OpenSSF badge, which is an external account action and not taken automatically.                                                  |
+| Check                | Score | Status                                                                                                                                                                         |
+| -------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Vulnerabilities`    | was 3 | **fixed** — now clean                                                                                                                                                          |
+| `Branch-Protection`  | was 0 | **fixed** — `main` now requires a pull request, blocks force-push and deletion, and gates on `Verify` and `Analyze JavaScript and TypeScript` with a strict up-to-date policy. |
+| `Code-Review`        | 0     | Pull requests are required, but zero approvals are, so a solo maintainer still self-merges. Expected to stay low until someone else reviews.                                   |
+| `Maintained`         | 0     | Repository is under 90 days old. Resolves with time.                                                                                                                           |
+| `CII-Best-Practices` | 0     | Requires registering for an OpenSSF badge, which is an external account action and not taken automatically.                                                                    |
+
+Secret scanning and push protection are still off. Both are free on a public
+repository and worth enabling.
 
 ## Marketplace readiness
 
