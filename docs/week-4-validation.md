@@ -109,7 +109,7 @@ re-verified. Every pull request carries exactly one comment per workflow.
 
 ## Release candidate
 
-- Release: <https://github.com/tjrgus2/GreenCI/releases/tag/v1.0.0-rc.2>
+- Release: `v1.0.0-rc.2` — since deleted, see the note at the end of this section
 - Workflow run: [31798300618](https://github.com/tjrgus2/GreenCI/actions/runs/31798300618)
 - Jobs: verify → attest → publish, with `major-tag` correctly **skipped** for a
   prerelease
@@ -127,9 +127,16 @@ The attestation's SLSA predicate binds the archive to commit
 runner — which is exactly the "what commit, built by what workflow" question the
 release engineering was meant to answer.
 
-`v1.0.0-rc.1` exists as a tag with no release attached. Its run failed
-verification, so the workflow refused to promote it. That is the gate behaving
-correctly and the tag is left in place as evidence.
+`v1.0.0-rc.1` was a tag with no release attached: its run failed verification, so
+the workflow refused to promote it. That is the gate behaving correctly.
+
+Both `rc.1` and `rc.2` have since been deleted. They were the last refs holding
+the pre-rewrite history — the commits that still carried `Co-Authored-By`
+trailers — and every identifier in this section belongs to that history. The runs,
+digests and predicates recorded here are what those runs actually produced; the
+commit SHAs no longer resolve in the repository. What shipped is
+[v1.0.0](https://github.com/tjrgus2/GreenCI/releases/tag/v1.0.0), built from
+`545fcc230d574851cdb50484ad09beceeb37c2ea`, which is on `main`.
 
 ### v1.0.0-rc.3
 
@@ -147,11 +154,25 @@ attestation named a commit that was no longer part of the branch. Run
 | Build provenance               | `gh attestation verify` succeeds               |
 
 The predicate binds to `3c5ead811321207fc9add6abe74755ca8f9ce88a`, which is on
-`main`, and `major-tag` skipped again for the prerelease. The demo repository runs
-this revision two ways at once — `greenci-live.yml` by release tag and
-`greenci-intelligence.yml` by commit SHA — on
-[PR #4](https://github.com/tjrgus2/greenci-demo/pull/4), where both comments
-render fully in Korean.
+`main`, and `major-tag` skipped again for the prerelease.
+
+### v1.0.0
+
+Run [31877195900](https://github.com/tjrgus2/GreenCI/actions/runs/31877195900),
+built from `545fcc230d574851cdb50484ad09beceeb37c2ea`. This is the first release
+where `major-tag` ran rather than skipped, so the floating `v1` tag now resolves
+to that commit — `gh attestation verify` succeeds against the archive.
+
+The demo repository exercises both supported installation paths against it at
+once: `greenci-live.yml` installs by the `v1` tag and `greenci-intelligence.yml`
+by the released commit SHA. Its `main` stays on `locale: en`;
+[PR #4](https://github.com/tjrgus2/greenci-demo/pull/4) changes exactly one line
+to `locale: ko` and both comments then render fully in Korean, which is the whole
+of what switching language takes.
+
+`Review dependency changes` was promoted to a required status check at the same
+time, so a moderate-or-higher advisory now blocks a merge instead of only
+reporting.
 
 ## Bugs found and fixed during Week 4
 
@@ -230,7 +251,7 @@ repository and worth enabling.
 | `action.yml` with `name`, `description`, `branding` | Yes — description rewritten to describe what GreenCI actually does |
 | `LICENSE`                                           | Yes — Apache-2.0, and GitHub now detects it                        |
 | README with installation                            | Yes, English and Korean                                            |
-| Published release tag                               | Yes — `v1.0.0-rc.2`                                                |
+| Published release tag                               | Yes — `v1.0.0`, with the floating `v1` tag moved to it             |
 | Repository description and topics                   | Yes — set, with ten topics                                         |
 | Floating major tag `v1`                             | Created only by a final release, not by a prerelease               |
 
