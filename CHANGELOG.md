@@ -9,7 +9,15 @@ The published report has its own schema version, recorded in every report as
 
 ## [Unreleased]
 
-### Fixed
+## [1.0.0] — 2026-08-15
+
+First public release. GreenCI installs as one GitHub Action job and reports how a
+pull request changed CI wait time, runner consumption, cost, and modeled carbon.
+
+Released from `v1.0.0-rc.3` after three release candidates. `rc.1` was refused by
+its own verification gate, and `rc.2` shipped before the localization work below.
+
+### Fixed since the release candidates
 
 - A Korean report rendered its most valuable content in English. Section
   headings and labels were translated, but the recommendation titles and
@@ -25,10 +33,16 @@ The published report has its own schema version, recorded in every report as
   `localization.test.ts` asserts that no English analyzer prose survives in a
   Korean render.
 
-## [1.0.0] — 2026-08-14
+- A rejected `.greenci.yml` answered in English even for a Korean report. The
+  message names the offending keys and the key each one probably meant, and
+  neither survives elsewhere in the report, so it is composed in the reader's
+  locale at validation time — Zod's own issue text included, through the
+  matching `z.locales` error map passed per parse.
 
-First public release. GreenCI installs as one GitHub Action job and reports how a
-pull request changed CI wait time, runner consumption, cost, and modeled carbon.
+- The documented-example checks found nothing on a CRLF checkout. Their fence
+  patterns anchor on `\n`, so on Windows the per-example validations quietly
+  became zero cases. Line endings are normalized when reading, and a
+  `.gitattributes` now checks text out as LF everywhere.
 
 ### Added
 
