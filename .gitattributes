@@ -1,0 +1,10 @@
+# Check every text file out with LF, on every platform.
+#
+# Without this, a Windows clone with core.autocrlf=true gets a CRLF working tree
+# while CI gets LF, so tooling that anchors on "\n" behaves differently in the
+# two places. That is how the documented-example checks came to find nothing
+# locally while passing in CI.
+* text=auto eol=lf
+
+# Generated bundle: committed, and compared byte for byte by `pnpm verify:dist`.
+packages/github-action/dist/** -text

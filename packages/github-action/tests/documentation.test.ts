@@ -11,8 +11,16 @@ import { GreenCIConfigFileSchema } from '@greenci/core';
  * actually say and check it against the shipped contracts.
  */
 
+/**
+ * Read a document with its line endings normalized.
+ *
+ * The fence patterns below anchor on `\n`, so a CRLF working tree — the default
+ * on Windows with `core.autocrlf=true` — matched nothing and quietly reduced the
+ * per-example checks to zero cases. What these tests assert is content, not
+ * encoding.
+ */
 function read(relativePath: string): string {
-  return readFileSync(resolve(relativePath), 'utf8');
+  return readFileSync(resolve(relativePath), 'utf8').replaceAll('\r\n', '\n');
 }
 
 function fencedBlocks(markdown: string, language: string): string[] {
