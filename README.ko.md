@@ -117,7 +117,7 @@ jobs:
 쓰세요. 릴리스 아티팩트에는 빌드 증명이 붙어 있어서 무엇을 고정했는지 검증할 수 있습니다.
 
 ```yaml
-- uses: tjrgus2/GreenCI@3c5ead811321207fc9add6abe74755ca8f9ce88a # v1.0.0-rc.3
+- uses: tjrgus2/GreenCI@545fcc230d574851cdb50484ad09beceeb37c2ea # v1.0.0
 ```
 
 ## 무엇을 보고하는가

@@ -122,7 +122,7 @@ behind a release; release archives carry build provenance, so you can verify wha
 you pinned.
 
 ```yaml
-- uses: tjrgus2/GreenCI@3c5ead811321207fc9add6abe74755ca8f9ce88a # v1.0.0-rc.3
+- uses: tjrgus2/GreenCI@545fcc230d574851cdb50484ad09beceeb37c2ea # v1.0.0
 ```
 
 ## What it reports
